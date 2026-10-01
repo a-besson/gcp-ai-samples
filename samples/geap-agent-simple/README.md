@@ -65,7 +65,7 @@ sequenceDiagram
 task setup      # venv + pinned dependencies
 task test       # offline Python + Terraform tests
 task plan       # builds the archive, then terraform plan
-task apply      # deploys the agent (asks for confirmation)
+task apply      # deploys the agent (no confirmation)
 task invoke -- "What is the capital of Belgium?"
 ```
 
@@ -77,7 +77,7 @@ task invoke -- "What is the capital of Belgium?"
 | `task lock` | Re-compile `app/requirements.txt` from `requirements.in` |
 | `task run` | Local ADK web UI (real model call) |
 | `task package` | Build the deterministic archive |
-| `task plan` / `task apply` / `task destroy` | Terraform lifecycle (`apply` and `destroy` ask for confirmation) |
+| `task plan` / `task apply` / `task destroy` | Terraform lifecycle (`destroy` asks for confirmation) |
 | `task invoke -- "<question>"` | Query the deployed agent |
 | `task test` | Offline Python and Terraform tests |
 | `task lint` | ruff and pyright |

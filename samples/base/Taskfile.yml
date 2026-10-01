@@ -25,7 +25,6 @@ tasks:
 
   apply:
     desc: "WARNING: provisions resources (KMS key cannot be fully destroyed) - applies the saved plan"
-    prompt: Apply the base stack to the configured project?
     deps: [plan]
     cmds:
       - terraform apply -input=false -auto-approve base.tfplan

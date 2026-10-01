@@ -48,7 +48,6 @@ tasks:
 
   apply:
     desc: "WARNING: provisions billable resources (2 Agent Gateways, Agent Runtime, Model Armor, function) - applies the saved plan"
-    prompt: Deploy the secured stack? Gateways and the agent runtime are billed while they exist.
     deps: [plan]
     cmds:
       - terraform apply -input=false -auto-approve secured.tfplan

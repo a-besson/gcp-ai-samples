@@ -103,7 +103,7 @@ sequenceDiagram
 task setup      # venv + pinned dependencies
 task test       # offline Python + Terraform tests (no credentials)
 task plan       # packages the agent, then terraform plan
-task apply      # asks for confirmation (billable)
+task apply      # billable, no confirmation prompt
 task invoke -- "Write 'hello' in agent-workspace/hello.txt then read it back"
 task e2e        # optional end-to-end checks against the deployed agent (billable)
 ```
@@ -129,7 +129,7 @@ task e2e        # optional end-to-end checks against the deployed agent (billabl
 |---|---|
 | `task setup` / `task lock` | Create `.venv` / re-compile pinned requirements |
 | `task package` | Build the deterministic agent archive |
-| `task plan` / `task apply` / `task destroy` | Terraform lifecycle (`apply`, `destroy` ask for confirmation) |
+| `task plan` / `task apply` / `task destroy` | Terraform lifecycle (`destroy` asks for confirmation) |
 | `task invoke -- "<question>"` | Query the deployed agent |
 | `task e2e` | Billable end-to-end checks (excluded from CI) |
 | `task test` | Offline Python and Terraform tests |

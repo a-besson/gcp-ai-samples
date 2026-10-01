@@ -57,7 +57,6 @@ tasks:
 
   apply:
     desc: "WARNING: deploys an Agent Runtime engine (billable while instances are up) - applies the saved plan"
-    prompt: Deploy the simple agent to the configured project?
     deps: [plan]
     cmds:
       - terraform apply -input=false -auto-approve simple.tfplan
