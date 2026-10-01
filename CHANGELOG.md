@@ -17,5 +17,6 @@
 - **geap-agent-simple / geap-agent-secured**: fix engine start-up ("Class LlmAgent is missing all methods query...") — entrypoint is now an `AdkApp` wrapper (`adk_app`) instead of the bare `LlmAgent`
 - **taskfile**: pass `-auto-approve` to every `terraform apply` / `destroy` ; no confirmation prompt on `apply` (kept on `destroy`)
 - **base**: enable the full Agent Platform API set (Agent Identity, App Hub, App Topology, Cloud API Registry, Dataform, Notebooks, Observability, App Lifecycle Manager, Security Command Center, Text-to-Speech)
+- **base / geap-agent-secured**: fix function build repository — `artifact_registry_repository` output is now the full path (`.id`), and the function builds the path from the repository ID
 - **scan**: exclude `.terraform`/`.venv` from Trivy and KICS; pin KICS image to `v2.1.20` (v2.2.0 not published on Docker Hub)
 - **adr**: add ADR 001-004 (mechanism order, Agent Identity, Model Armor at gateway, dual gateway)

@@ -50,9 +50,10 @@ resource "google_cloudfunctions2_function" "action" {
   kms_key_name = local.base.kms_key_id
 
   build_config {
-    runtime           = "python313"
-    entry_point       = "handle"
-    docker_repository = local.base.artifact_registry_repository
+    runtime     = "python313"
+    entry_point = "handle"
+    # Full path expected by Cloud Functions (built from the repository ID, so it works with any base output version)
+    docker_repository = "projects/${var.project_id}/locations/${var.region}/repositories/${local.base.artifact_registry_repository_id}"
     service_account   = google_service_account.function_build.id
 
     source {

@@ -47,6 +47,15 @@ run "sovereignty_and_security_invariants" {
   }
 }
 
+run "repository_output_is_a_full_resource_path" {
+  command = apply
+
+  assert {
+    condition     = startswith(output.artifact_registry_repository, "projects/")
+    error_message = "artifact_registry_repository must be the full repository path, not the short name."
+  }
+}
+
 run "labels_use_project_prefix" {
   command = apply
 

@@ -59,7 +59,7 @@
 
 | Name | Description |
 | ---- | ----------- |
-| <a name="output_artifact_registry_repository"></a> [artifact\_registry\_repository](#output\_artifact\_registry\_repository) | Name of the CMEK-protected Docker repository (Cloud Functions builds). |
+| <a name="output_artifact_registry_repository"></a> [artifact\_registry\_repository](#output\_artifact\_registry\_repository) | Full resource path (projects/<p>/locations/<l>/repositories/<r>) of the CMEK-protected Docker repository, as expected by Cloud Functions builds. |
 | <a name="output_artifact_registry_repository_id"></a> [artifact\_registry\_repository\_id](#output\_artifact\_registry\_repository\_id) | Repository ID of the Docker repository. |
 | <a name="output_kms_key_id"></a> [kms\_key\_id](#output\_kms\_key\_id) | ID of the single CMEK key shared by all samples. |
 | <a name="output_kms_keyring_id"></a> [kms\_keyring\_id](#output\_kms\_keyring\_id) | ID of the key ring holding the shared key. |

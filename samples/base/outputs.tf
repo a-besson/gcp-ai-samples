@@ -39,8 +39,8 @@ output "subnet_psc_attach_id" {
 }
 
 output "artifact_registry_repository" {
-  description = "Name of the CMEK-protected Docker repository (Cloud Functions builds)."
-  value       = google_artifact_registry_repository.docker.name
+  description = "Full resource path (projects/<p>/locations/<l>/repositories/<r>) of the CMEK-protected Docker repository, as expected by Cloud Functions builds."
+  value       = google_artifact_registry_repository.docker.id
 }
 
 output "artifact_registry_repository_id" {

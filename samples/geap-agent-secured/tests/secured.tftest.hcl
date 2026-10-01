@@ -8,10 +8,10 @@ override_data {
   target = data.terraform_remote_state.base
   values = {
     outputs = {
-      kms_key_id                   = "projects/my-gcp-project-id/locations/europe-west1/keyRings/kr-gcp-samples/cryptoKeys/key-gcp-samples"
-      project_number               = "123456789012"
-      subnet_psc_attach_id         = "projects/my-gcp-project-id/regions/europe-west1/subnetworks/snet-psc-attach-ew1"
-      artifact_registry_repository = "projects/my-gcp-project-id/locations/europe-west1/repositories/ar-gcp-samples"
+      kms_key_id                      = "projects/my-gcp-project-id/locations/europe-west1/keyRings/kr-gcp-samples/cryptoKeys/key-gcp-samples"
+      project_number                  = "123456789012"
+      subnet_psc_attach_id            = "projects/my-gcp-project-id/regions/europe-west1/subnetworks/snet-psc-attach-ew1"
+      artifact_registry_repository_id = "ar-gcp-samples"
     }
   }
 }
@@ -90,6 +90,15 @@ run "function_service_agents_can_use_the_key" {
   assert {
     condition     = toset(keys(google_kms_crypto_key_iam_member.function_agents)) == toset(["cloudfunctions.googleapis.com", "run.googleapis.com"])
     error_message = "The Cloud Functions and Cloud Run service agents must be granted on the shared key."
+  }
+}
+
+run "function_builds_into_the_full_repository_path" {
+  command = apply
+
+  assert {
+    condition     = google_cloudfunctions2_function.action.build_config[0].docker_repository == "projects/my-gcp-project-id/locations/europe-west1/repositories/ar-gcp-samples"
+    error_message = "The function docker_repository must be the full repository path."
   }
 }
 
