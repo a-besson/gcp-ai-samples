@@ -43,7 +43,7 @@ variable "state_bucket" {
 variable "model" {
   type        = string
   description = "Gemini model name served by the regional europe-west1 endpoint. Check availability before changing it."
-  default     = "gemini-2.5-flash"
+  default     = "gemini-3.5-flash"
 
   validation {
     condition     = can(regex("^gemini-[a-z0-9.-]+$", var.model))

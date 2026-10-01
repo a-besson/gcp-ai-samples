@@ -57,18 +57,23 @@ locals {
 
   # APIs needed by base and by the samples that consume it
   apis = [
+    "agentidentity.googleapis.com", # Agent Identity
     "agentregistry.googleapis.com",
     "aiplatform.googleapis.com",
+    "apphub.googleapis.com",      # App Hub
+    "apptopology.googleapis.com", # App Topology
     "artifactregistry.googleapis.com",
     "billingbudgets.googleapis.com",
+    "cloudapiregistry.googleapis.com", # Cloud API Registry
     "cloudasset.googleapis.com",
-    "cloudbilling.googleapis.com", # lets the project data source expose its billing account
+    "cloudbilling.googleapis.com",
     "cloudbuild.googleapis.com",
     "cloudfunctions.googleapis.com",
     "cloudkms.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "cloudtrace.googleapis.com",
     "compute.googleapis.com",
+    "dataform.googleapis.com", # Dataform
     "dns.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
@@ -78,10 +83,15 @@ locals {
     "monitoring.googleapis.com",
     "networksecurity.googleapis.com",
     "networkservices.googleapis.com",
+    "notebooks.googleapis.com",     # Notebooks
+    "observability.googleapis.com", # Observability
     "run.googleapis.com",
+    "saasservicemgmt.googleapis.com", # App Lifecycle Manager
+    "securitycenter.googleapis.com",  # Security Command Center
     "serviceusage.googleapis.com",
     "storage.googleapis.com",
     "telemetry.googleapis.com",
+    "texttospeech.googleapis.com", # Cloud Text-to-Speech
   ]
 }
 
