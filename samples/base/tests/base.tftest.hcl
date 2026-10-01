@@ -3,6 +3,15 @@
 mock_provider "google" {}
 mock_provider "google-beta" {}
 
+# Project billing link not readable by default (as with an unknown account)
+override_data {
+  target = data.google_project.this
+  values = {
+    number          = "123456789012"
+    billing_account = ""
+  }
+}
+
 variables {
   project_id      = "my-gcp-project-id"
   billing_account = "ABCDEF-123456-ABCDEF"
@@ -100,4 +109,25 @@ run "rejects_malformed_billing_account" {
   }
 
   expect_failures = [var.billing_account]
+}
+
+run "budget_uses_the_billing_account_linked_to_the_project" {
+  command = apply
+
+  variables {
+    billing_account = null
+  }
+
+  override_data {
+    target = data.google_project.this
+    values = {
+      number          = "123456789012"
+      billing_account = "ABCDEF-123456-ABCDEF"
+    }
+  }
+
+  assert {
+    condition     = length(google_billing_budget.this) == 1 && google_billing_budget.this[0].billing_account == "ABCDEF-123456-ABCDEF"
+    error_message = "The budget must fall back to the billing account linked to the project."
+  }
 }

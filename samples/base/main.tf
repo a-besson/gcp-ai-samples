@@ -57,6 +57,7 @@ locals {
     "artifactregistry.googleapis.com",
     "billingbudgets.googleapis.com",
     "cloudasset.googleapis.com",
+    "cloudbilling.googleapis.com", # lets the project data source expose its billing account
     "cloudbuild.googleapis.com",
     "cloudfunctions.googleapis.com",
     "cloudkms.googleapis.com",

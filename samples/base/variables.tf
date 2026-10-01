@@ -32,7 +32,7 @@ variable "env" {
 
 variable "billing_account" {
   type        = string
-  description = "Billing account ID (XXXXXX-XXXXXX-XXXXXX) for the budget alerts. Null or empty disables the budget."
+  description = "Billing account ID (XXXXXX-XXXXXX-XXXXXX) for the budget alerts. Null or empty: use the billing account linked to the project when readable, otherwise no budget."
   default     = null
 
   validation {

@@ -10,7 +10,7 @@ Common resources consumed by every GEAP sample through `terraform_remote_state`:
 - Custom-mode VPC `vpc-gcp-samples` with a workloads subnet and a subnet reserved for PSC interface network attachments.
 - Logs kept in Belgium (regional bucket) with the global `_Default` sink excluded.
 - CMEK-protected Artifact Registry repository (immutable tags).
-- Budget alerts at 50 / 90 / 100 % (optional).
+- Budget alerts at 50 / 90 / 100 % (optional): billing account from `TF_VAR_billing_account`, else the one linked to the project when readable, else disabled.
 
 ## 🧭 Architecture
 
