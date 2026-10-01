@@ -1,5 +1,10 @@
 # PLAN — Samples Gemini Enterprise Agent Platform (GEAP)
 
+> **Avancement (2026-10-01)** — Phases 0 à 6 : code écrit, tests hors ligne verts, scans KICS/Trivy verts, pre-commit vert.
+> Phase 7 : suite e2e (`task e2e`) et `task audit-location` écrites, **non exécutées** (nécessitent un `apply`).
+> Phase 8 : READMEs, ADR, CHANGELOG à jour. **Aucun `apply` n'a été lancé** : en attente d'accord utilisateur (coûts).
+> Écarts par rapport au plan : voir `docs/VERIFICATION.md`.
+
 > Plan d'exécution destiné à **Claude Sonnet 5.5** (Claude Code).
 > Source : `PROMPT.md` (gitignoré). Rédigé le 2026-10-01 à partir de la doc
 > GEAP, du provider Terraform `google`/`google-beta` (branche `main`) et des

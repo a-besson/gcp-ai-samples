@@ -43,3 +43,21 @@ Le provider GA `google` v8.5.0 expose déjà des ressources Terraform que le pla
 | `actionlint` | absent | validation des workflows (optionnel) |
 
 Présents : terraform 1.16.4, tflint 0.64.0, terraform-docs 0.24.0, pre-commit 4.6.2, task 3.53.1, gcloud 585.0.0, trivy 0.74.0, gitleaks 8.30.1, gh 2.102.0, podman 6.1.3.
+
+## État après la construction des phases 2 à 6 (2026-10-01)
+
+Tout le code est écrit et validé **hors ligne** (providers mockés) ; aucun `apply` n'a été lancé. Les points V-runtime restent donc ouverts et sont listés dans le README du sample sécurisé (« To validate at first apply »).
+
+| ID | Statut | Détail |
+|---|---|---|
+| V3 | ouvert | Principal construit avec `principal://<effective_identity>` (cf. doc). À confirmer : accepté par les bindings IAM. |
+| V7 | ouvert | Binding `roles/storage.objectUser` sur le managed folder pour l'Agent Identity. |
+| V8 | ouvert | ID token Agent Identity pour la function interne ; variable `GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES=false` reprise de la doc gateway. |
+| V9 | ouvert | Le sandbox est rattaché au moteur de l'agent via `GOOGLE_CLOUD_AGENT_ENGINE_ID` (ou `AGENT_ENGINE_RESOURCE_NAME`) ; sans moteur résolu, l'exécuteur est désactivé avec un avertissement. |
+| V12 | ouvert | Modèle par défaut `gemini-2.5-flash` (variable `model`) : disponibilité sur l'endpoint régional `europe-west1` non vérifiée (APIs non activées avant `base:apply`). |
+
+Hypothèses de modélisation à valider au premier apply (voir aussi le README du sample sécurisé) :
+- Agent Registry : un `google_agent_registry_service` avec `endpoint_spec` apparaît comme *endpoint* du registre, retrouvé par `displayName`.
+- PSC-I et `agent_gateway_config` sur le même moteur.
+- Service agents : `gcp-sa-aiplatform-re` existe quand l'API Agent Platform est activée (lié au CMEK du moteur).
+- `google_project_service_identity` pour `cloudfunctions.googleapis.com` et `run.googleapis.com`.

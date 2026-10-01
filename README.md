@@ -33,6 +33,7 @@ task --list
 | `task bootstrap` | Create the Terraform state bucket (idempotent) |
 | `task lint` | Run all pre-commit hooks |
 | `task scan` | KICS + Trivy (HIGH/CRITICAL fail) |
+| `task audit-location` | Read-only: list resources outside `europe-west1` / `global` |
 | `task test-all` | Offline tests of every sample |
 | `task apply-all` / `task destroy-all` | Provision / delete everything (billable) |
 

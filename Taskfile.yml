@@ -85,6 +85,14 @@ tasks:
       - task: kics
       - task: trivy
 
+  audit-location:
+    desc: "Read-only: list project resources outside europe-west1 / global (needs cloudasset.googleapis.com)"
+    cmds:
+      - |
+        gcloud asset search-all-resources --scope="projects/$GCP_PROJECT_ID" \
+          --query="NOT location:europe-west1 AND NOT location:global" \
+          --format="table(assetType,name,location)"
+
   test-all:
     desc: Run the offline tests of every sample
     cmds:

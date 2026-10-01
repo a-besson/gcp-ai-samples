@@ -69,9 +69,9 @@ jobs:
           uv pip install -r requirements-dev.txt
       - name: ruff
         run: |
-          uv run ruff check .
-          uv run ruff format --check .
+          .venv/bin/ruff check .
+          .venv/bin/ruff format --check .
       - name: pyright
-        run: uv run pyright
+        run: .venv/bin/pyright
       - name: pytest (offline, dummy credentials)
-        run: uv run pytest -m "not e2e"
+        run: .venv/bin/python -m pytest -m "not e2e"

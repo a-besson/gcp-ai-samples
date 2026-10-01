@@ -16,7 +16,7 @@ tasks:
   setup:
     desc: Create the local .venv (Python 3.14) and install the pinned dependencies
     cmds:
-      - uv venv --python 3.14 .venv
+      - uv venv --allow-existing --python 3.14 .venv
       - uv pip install --python .venv/bin/python -r requirements-dev.txt
     sources:
       - requirements-dev.txt
