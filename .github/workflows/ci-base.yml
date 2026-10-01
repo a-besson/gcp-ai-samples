@@ -1,0 +1,28 @@
+name: ci-base
+
+on:
+  push:
+    paths:
+      - "samples/base/**"
+      - ".github/workflows/_sample.yml"
+      - ".github/workflows/ci-base.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+  pull_request:
+    paths:
+      - "samples/base/**"
+      - ".github/workflows/_sample.yml"
+      - ".github/workflows/ci-base.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  sample:
+    uses: ./.github/workflows/_sample.yml
+    with:
+      sample: base

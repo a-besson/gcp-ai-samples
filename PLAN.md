@@ -108,7 +108,6 @@ Légende stade : GA / Preview / 🔎 à confirmer. « V#» = vérification Phase
 .
 ├── .github/workflows/
 │   ├── ci.yml                    # pre-commit, tests TF/Python, KICS, Trivy (path-filtered)
-│   └── deploy.yml                # workflow_dispatch, WIF, plan/apply manuel par sample (optionnel)
 ├── .pre-commit-config.yaml
 ├── .tflint.hcl
 ├── kics.config                   # exclusions commentées
@@ -123,7 +122,7 @@ Légende stade : GA / Preview / 🔎 à confirmer. « V#» = vérification Phase
     ├── base/
     │   ├── Taskfile.yml  README.md  TFDOCS.md  .env.example
     │   ├── main.tf  backend.tf  variables.tf  outputs.tf
-    │   ├── apis.tf  kms.tf  network.tf  logging.tf  artifact_registry.tf  cicd.tf  budget.tf
+    │   ├── apis.tf  kms.tf  network.tf  logging.tf  artifact_registry.tf  budget.tf
     │   └── tests/base.tftest.hcl
     ├── geap-agent-simple/
     │   ├── Taskfile.yml  README.md  TFDOCS.md  .env.example
@@ -228,11 +227,10 @@ Légende stade : GA / Preview / 🔎 à confirmer. « V#» = vérification Phase
 | `network.tf` | Module network : VPC `vpc-gcp-samples` (custom), subnet `snet-workloads-ew1` `10.10.0.0/24` (Private Google Access, flow logs 0.5), subnet `snet-psc-attach-ew1` `10.10.1.0/28` réservé aux network attachments. Firewall : deny-all ingress explicite (priorité basse, loggé) ; règles egress documentées. **Pas de NAT**. Option `enable_psc_google_apis` : endpoint PSC Google APIs + zone DNS privée `googleapis.com`. |
 | `logging.tf` | Bucket de logs `europe-west1` + redirection du sink `_Default` (souveraineté des logs), rétention 30 j. |
 | `artifact_registry.tf` | Repo Docker `europe-west1`, CMEK (utilisé par les builds Cloud Functions). |
-| `cicd.tf` | Option `enable_github_wif` (défaut `false`) : pool/provider WIF, `attribute_condition` sur `assertion.repository == var.github_repository`, SA de déploiement. |
 | `budget.tf` | `google_billing_budget` (seuils 50/90/100 %), `billing_account` en variable. |
 | `outputs.tf` | `kms_key_id`, `network_id`, `network_name`, `subnet_workloads_id`, `subnet_psc_attach_id`, `artifact_registry_repo`, `region`. |
 
-**Org policy** (optionnelle, nécessite droits org) : `constraints/gcp.resourceLocations = in:europe-west1-locations` au niveau projet, derrière `enable_location_policy` (défaut `false`) — documenter dans le README.
+**Org policy** : sans organisation, pas de `resourceLocations` — le contrôle de région repose sur les `validation {}` et les tests.
 
 **Tests** `tests/base.tftest.hcl` (`mock_provider`) : région forcée `europe-west1` ; clé avec `rotation_period` ; aucune ressource NAT ; subnets avec Private Google Access ; labels `project = gcp-samples_base`.
 
@@ -377,7 +375,6 @@ Puis : `task scan` vert, revue des logs (tous en `europe-west1`), vérification 
 
 1. README de chaque sample au squelette doc-practices : Features, Architecture (Mermaid `graph TD` + `sequenceDiagram` du flux ingress → Model Armor → agent → egress gateway → GCS/function/sandbox), **Key Design Decisions** (renvoi ADR), **Security Design**, **Sovereignty** (ce qui reste global), FinOps (tableau §7 + `> [!TIP]`), Prerequisites, Deployment (`task` numérotées), Task Commands, Project Structure.
 2. `TFDOCS.md` régénérés par pre-commit.
-3. `deploy.yml` (si `enable_github_wif`) : `workflow_dispatch` (input sample + action plan/apply), auth WIF (`google-github-actions/auth` épinglé SHA), environment GitHub protégé (approbation manuelle pour `apply`).
 4. `CHANGELOG.md` à jour, README racine à jour.
 
 **Commit** : `docs: complete sample readmes, architecture diagrams and finops notes`
@@ -416,15 +413,10 @@ Puis : `task scan` vert, revue des logs (tous en `europe-west1`), vérification 
 
 ---
 
-## 8. Questions ouvertes pour l'utilisateur
+## 8. Décisions utilisateur (2026-10-01)
 
-1. Langue de la documentation du repo : anglais (cohérent avec `AGENT.md`) ou français ? 
-Anglais
-2. Projet GCP unique pour les 3 samples (hypothèse du plan) ou un projet par sample ?
-Un seul projet GCP project-f574a412-a17b-41d4-893
-3. Le projet est-il rattaché à une **organisation** (trust domain Agent Identity `org-…` vs `proj-…`, possibilité d'org policy `resourceLocations`) ?
-Non il n'est pas rattaché a une orga
-4. Déploiement depuis GitHub Actions (WIF) souhaité, ou CI limitée à lint/tests/scans ?
-CI limitée à lint/tests/scans, terraform validate
-5. Pipeline GitLab CI miroir (rule dev-practices) : à ajouter ou hors scope ?
-hors scope
+1. Documentation du repo (README, ADR, TFDOCS) en **anglais** ; `PLAN.md` reste en français.
+2. **Un seul projet GCP** pour les 3 samples ; l'ID vient de `.env` (`GCP_PROJECT_ID`) / `TF_VAR_project_id`, **jamais committé**.
+3. Projet **sans organisation** : trust domain `agents.global.proj-<PROJECT_NUMBER>.system.id.goog`, pas d'org policy (`enable_location_policy` supprimé).
+4. CI limitée à lint, tests, `terraform validate`, KICS/Trivy — **pas de WIF ni de `deploy.yml`** (`cicd.tf` supprimé de la Phase 2, Phase 8 point 3 supprimé).
+5. **Pas de GitLab CI.**

@@ -1,0 +1,84 @@
+# Root orchestration — foundation (base) first on apply, last on destroy.
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  KICS_IMAGE: docker.io/checkmarx/kics:v2.2.0
+
+includes:
+  base:
+    taskfile: samples/base/Taskfile.yml
+    dir: samples/base
+    optional: true
+  simple:
+    taskfile: samples/geap-agent-simple/Taskfile.yml
+    dir: samples/geap-agent-simple
+    optional: true
+  secured:
+    taskfile: samples/geap-agent-secured/Taskfile.yml
+    dir: samples/geap-agent-secured
+    optional: true
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  bootstrap:
+    desc: Create the encrypted-at-rest, versioned Terraform state bucket in europe-west1 (idempotent)
+    preconditions:
+      - sh: test -n "$GCP_PROJECT_ID" && test -n "$TF_STATE_BUCKET"
+        msg: "Set GCP_PROJECT_ID and TF_STATE_BUCKET in .env (see .env.example)"
+    cmds:
+      - |
+        gcloud storage buckets describe "gs://$TF_STATE_BUCKET" --project="$GCP_PROJECT_ID" >/dev/null 2>&1 \
+        || gcloud storage buckets create "gs://$TF_STATE_BUCKET" --project="$GCP_PROJECT_ID" \
+             --location="${GCP_REGION:-europe-west1}" --uniform-bucket-level-access --public-access-prevention
+      - gcloud storage buckets update "gs://$TF_STATE_BUCKET" --project="$GCP_PROJECT_ID" --versioning
+
+  lint:
+    desc: Run all pre-commit hooks on every file
+    cmds:
+      - pre-commit run --all-files
+
+  kics:
+    desc: Scan the IaC with KICS (fails on HIGH/CRITICAL)
+    cmds:
+      - podman run --rm -v "$PWD:/path:ro" {{.KICS_IMAGE}} scan -p /path --config /path/kics.config
+
+  trivy:
+    desc: Scan IaC misconfigurations, vulnerabilities and secrets with Trivy (fails on HIGH/CRITICAL)
+    cmds:
+      - trivy config --config trivy.yaml .
+      - trivy fs --config trivy.yaml --scanners vuln,secret .
+
+  scan:
+    desc: Run KICS and Trivy
+    cmds:
+      - task: kics
+      - task: trivy
+
+  test-all:
+    desc: Run the offline tests of every sample
+    cmds:
+      - task: base:test
+      - task: simple:test
+      - task: secured:test
+
+  apply-all:
+    desc: "WARNING: provisions billable resources - base first, then the agents"
+    cmds:
+      - task: base:apply
+      - task: simple:apply
+      - task: secured:apply
+
+  destroy-all:
+    desc: "WARNING: deletes all sample resources - agents first, base last"
+    prompt: This destroys every sample. Continue?
+    cmds:
+      - task: secured:destroy
+      - task: simple:destroy
+      - task: base:destroy

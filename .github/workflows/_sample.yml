@@ -1,0 +1,77 @@
+# Reusable pipeline for one sample: fmt, validate, tflint, offline terraform tests, Python tests.
+# No cloud credentials: everything runs offline (mock providers, mocked LLM calls).
+name: sample
+
+on:
+  workflow_call:
+    inputs:
+      sample:
+        description: Sample directory name under samples/
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: terraform (${{ inputs.sample }})
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: samples/${{ inputs.sample }}
+    env:
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.4
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .terraform.d/plugin-cache
+          key: tf-plugins-${{ inputs.sample }}-${{ hashFiles(format('samples/{0}/**/*.tf', inputs.sample)) }}
+          restore-keys: tf-plugins-${{ inputs.sample }}-
+      - name: Prepare plugin cache
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+      - name: terraform init (no backend)
+        run: terraform init -backend=false -input=false
+      - name: terraform validate
+        run: terraform validate
+      - name: tflint
+        run: |
+          tflint --init --config="$GITHUB_WORKSPACE/.tflint.hcl"
+          tflint --config="$GITHUB_WORKSPACE/.tflint.hcl"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: terraform test (offline)
+        run: terraform test
+
+  python:
+    name: python (${{ inputs.sample }})
+    if: inputs.sample != 'base' # base is pure Terraform
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: samples/${{ inputs.sample }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -r requirements.txt -r requirements-dev.txt
+      - name: ruff
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: pyright
+        run: uv run pyright
+      - name: pytest (offline, dummy credentials)
+        run: uv run pytest -m "not e2e"
