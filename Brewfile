@@ -1,0 +1,18 @@
+# Workstation dependencies for this repository — installed by `task setup`.
+tap "hashicorp/tap"
+tap "terraform-linters/tap"
+
+brew "go-task"
+brew "hashicorp/tap/terraform"
+cask "terraform-linters/tap/tflint"
+brew "terraform-docs"
+brew "pre-commit"
+brew "gitleaks"
+brew "trivy"
+brew "actionlint"
+brew "gh"
+brew "uv"
+brew "ruff"
+brew "python@3.14"
+brew "podman"
+cask "gcloud-cli"

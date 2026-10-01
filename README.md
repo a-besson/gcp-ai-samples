@@ -7,7 +7,7 @@ Industrial-grade samples for the **Gemini Enterprise Agent Platform (GEAP)**: Ag
 
 ## 🚀 Getting Started
 
-Prerequisites: `terraform`, `tflint`, `terraform-docs`, `pre-commit`, `task`, `gcloud`, `trivy`, `gitleaks`, `podman`, `uv`, Python 3.13.
+Prerequisites: `terraform`, `tflint`, `terraform-docs`, `pre-commit`, `task`, `gcloud`, `trivy`, `gitleaks`, `podman`, `uv`, Python 3.14 (all installed by `task setup`).
 
 ```bash
 cp .env.example .env      # fill in the placeholders

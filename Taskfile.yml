@@ -4,7 +4,7 @@ version: "3"
 dotenv: [".env"]
 
 vars:
-  KICS_IMAGE: docker.io/checkmarx/kics:v2.2.0
+  KICS_IMAGE: docker.io/checkmarx/kics:v2.1.20
 
 includes:
   base:
@@ -27,6 +27,29 @@ tasks:
       - task --list
     silent: true
 
+  setup:
+    desc: Install workstation dependencies (Brewfile), git hooks, TFLint plugins and check the local configuration
+    cmds:
+      - brew bundle --file=Brewfile
+      - test -f .env || cp .env.example .env
+      - pre-commit install
+      - tflint --init --config=.tflint.hcl
+      - task: doctor
+
+  doctor:
+    desc: Check that required tools, Python 3.14 and the gcloud session are available
+    cmds:
+      - |
+        missing=0
+        for t in terraform tflint terraform-docs pre-commit gitleaks trivy podman uv ruff gcloud gh python3.14; do
+          command -v "$t" >/dev/null || { echo "MISSING: $t (run: task setup)"; missing=1; }
+        done
+        test -n "${GCP_PROJECT_ID:-}" || { echo "MISSING: GCP_PROJECT_ID in .env"; missing=1; }
+        gcloud auth application-default print-access-token >/dev/null 2>&1 \
+          || echo "WARNING: no ADC credentials (run: gcloud auth application-default login)"
+        exit $missing
+    silent: true
+
   bootstrap:
     desc: Create the encrypted-at-rest, versioned Terraform state bucket in europe-west1 (idempotent)
     preconditions:
@@ -47,7 +70,8 @@ tasks:
   kics:
     desc: Scan the IaC with KICS (fails on HIGH/CRITICAL)
     cmds:
-      - podman run --rm -v "$PWD:/path:ro" {{.KICS_IMAGE}} scan -p /path --config /path/kics.config
+      - podman machine start >/dev/null 2>&1 || true
+      - podman run --rm -v "$PWD:/path:ro" {{.KICS_IMAGE}} scan -p /path --config /path/kics.config --no-progress
 
   trivy:
     desc: Scan IaC misconfigurations, vulnerabilities and secrets with Trivy (fails on HIGH/CRITICAL)
