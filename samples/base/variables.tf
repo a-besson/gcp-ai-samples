@@ -32,11 +32,11 @@ variable "env" {
 
 variable "billing_account" {
   type        = string
-  description = "Billing account ID (XXXXXX-XXXXXX-XXXXXX) for the budget alerts. Null disables the budget."
+  description = "Billing account ID (XXXXXX-XXXXXX-XXXXXX) for the budget alerts. Null or empty disables the budget."
   default     = null
 
   validation {
-    condition     = var.billing_account == null || can(regex("^[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}$", coalesce(var.billing_account, "x")))
+    condition     = var.billing_account == null ? true : (var.billing_account == "" || can(regex("^[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}$", var.billing_account)))
     error_message = "billing_account must look like XXXXXX-XXXXXX-XXXXXX (uppercase hexadecimal)."
   }
 }

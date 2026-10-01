@@ -42,7 +42,7 @@
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_billing_account"></a> [billing\_account](#input\_billing\_account) | Billing account ID (XXXXXX-XXXXXX-XXXXXX) for the budget alerts. Null disables the budget. | `string` | `null` | no |
+| <a name="input_billing_account"></a> [billing\_account](#input\_billing\_account) | Billing account ID (XXXXXX-XXXXXX-XXXXXX) for the budget alerts. Null or empty disables the budget. | `string` | `null` | no |
 | <a name="input_budget_amount"></a> [budget\_amount](#input\_budget\_amount) | Monthly budget amount (in budget\_currency) triggering the 50/90/100 % alerts. Bounded to protect the bill. | `number` | `50` | no |
 | <a name="input_budget_currency"></a> [budget\_currency](#input\_budget\_currency) | ISO 4217 currency of the budget; must match the billing account currency. | `string` | `"EUR"` | no |
 | <a name="input_env"></a> [env](#input\_env) | Environment label applied to every resource. | `string` | `"sandbox"` | no |

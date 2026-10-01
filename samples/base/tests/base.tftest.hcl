@@ -78,3 +78,26 @@ run "rejects_excessive_budget" {
 
   expect_failures = [var.budget_amount]
 }
+
+run "budget_disabled_with_empty_billing_account" {
+  command = apply
+
+  variables {
+    billing_account = ""
+  }
+
+  assert {
+    condition     = length(google_billing_budget.this) == 0
+    error_message = "An empty billing_account must disable the budget instead of failing."
+  }
+}
+
+run "rejects_malformed_billing_account" {
+  command = plan
+
+  variables {
+    billing_account = "my-gcp-project-id"
+  }
+
+  expect_failures = [var.billing_account]
+}
