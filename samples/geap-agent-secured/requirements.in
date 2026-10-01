@@ -1,0 +1,6 @@
+# Runtime dependencies shipped with the agent (compiled into app/requirements.txt).
+google-adk==2.10.0
+google-cloud-aiplatform[adk,agent_engines]==2.3.0
+google-cloud-storage==3.15.1
+requests==2.34.2
+tenacity==9.1.4

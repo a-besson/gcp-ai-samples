@@ -1,0 +1,100 @@
+# Secured ADK agent: Agent Gateways, Model Armor, sandbox, VPC, scoped bucket access, Cloud Run function.
+version: "3"
+
+env:
+  TF_VAR_project_id: "{{.GCP_PROJECT_ID}}"
+  TF_VAR_region: "{{.GCP_REGION}}"
+  TF_VAR_state_bucket: "{{.TF_STATE_BUCKET}}"
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  setup:
+    desc: Create the local .venv (Python 3.14) and install the pinned dependencies
+    cmds:
+      - uv venv --python 3.14 .venv
+      - uv pip install --python .venv/bin/python -r requirements-dev.txt
+    sources:
+      - requirements-dev.txt
+      - app/requirements.txt
+    status:
+      - test -x .venv/bin/python
+
+  lock:
+    desc: Re-compile the pinned runtime requirements from requirements.in
+    cmds:
+      - uv pip compile requirements.in --universal --python-version 3.13 -o app/requirements.txt
+
+  package:
+    desc: Build the deterministic agent archive build/agent_src.tar.gz
+    deps: [setup]
+    cmds:
+      - .venv/bin/python scripts/package.py
+
+  init:
+    desc: Initialise Terraform with the remote GCS backend (needs `task bootstrap` and samples/base applied)
+    cmds:
+      - terraform init -reconfigure -input=false -backend-config="bucket=$TF_STATE_BUCKET"
+
+  plan:
+    desc: Plan the secured stack
+    deps: [init, package]
+    cmds:
+      - terraform plan -input=false -out=secured.tfplan
+
+  apply:
+    desc: "WARNING: provisions billable resources (2 Agent Gateways, Agent Runtime, Model Armor, function) - applies the saved plan"
+    prompt: Deploy the secured stack? Gateways and the agent runtime are billed while they exist.
+    deps: [plan]
+    cmds:
+      - terraform apply -input=false secured.tfplan
+
+  destroy:
+    desc: "WARNING: deletes the secured stack, including the data bucket and its objects"
+    deps: [init]
+    prompt: Destroy the secured stack (the data bucket content is deleted)?
+    cmds:
+      - terraform destroy -input=false
+
+  invoke:
+    desc: 'Ask the deployed agent a question, e.g. task invoke -- "Write hello in agent-workspace/a.txt"'
+    deps: [setup]
+    cmds:
+      - |
+        REASONING_ENGINE_ID="$(terraform output -raw reasoning_engine_id | awk -F/ '{print $NF}')" \
+        .venv/bin/python scripts/invoke.py "{{.CLI_ARGS}}"
+
+  e2e:
+    desc: "WARNING: billable end-to-end checks against the deployed agent (LLM calls)"
+    deps: [setup]
+    cmds:
+      - |
+        REASONING_ENGINE_ID="$(terraform output -raw reasoning_engine_id | awk -F/ '{print $NF}')" \
+        E2E_BUCKET="$(terraform output -raw bucket_name)" \
+        .venv/bin/python -m pytest tests/e2e -m e2e -v
+
+  test:
+    desc: Run the offline tests (Python and Terraform) — no credentials, no LLM call
+    deps: [setup]
+    cmds:
+      - .venv/bin/python -m pytest -m "not e2e"
+      - terraform init -reconfigure -backend=false -input=false
+      - terraform test
+
+  lint:
+    desc: Run ruff and pyright
+    deps: [setup]
+    cmds:
+      - .venv/bin/ruff check .
+      - .venv/bin/ruff format --check .
+      - .venv/bin/pyright
+
+  validate:
+    desc: Validate the Terraform configuration without backend or credentials
+    cmds:
+      - terraform init -reconfigure -backend=false -input=false
+      - terraform validate

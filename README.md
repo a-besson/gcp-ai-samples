@@ -23,7 +23,7 @@ task --list
 |---|---|---|
 | `base` | Shared foundations: single KMS key, Belgium VPC, logging | [samples/base](samples/base/README.md) |
 | `geap-agent-simple` | ADK agent on Agent Runtime answering a question through an LLM | [samples/geap-agent-simple](samples/geap-agent-simple/README.md) |
-| `geap-agent-secured` | Agent behind Agent Gateways with Model Armor, sandboxed code execution, scoped bucket access and Cloud Run function | [samples/geap-agent-secured](samples/geap-agent-secured/README.md) *(planned)* |
+| `geap-agent-secured` | Agent behind Agent Gateways with Model Armor, sandboxed code execution, scoped bucket access and Cloud Run function | [samples/geap-agent-secured](samples/geap-agent-secured/README.md) |
 
 ## 🧰 Task Commands
 
