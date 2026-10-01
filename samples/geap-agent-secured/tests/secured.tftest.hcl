@@ -136,7 +136,7 @@ run "two_gateways_with_model_armor_on_ingress" {
   }
 }
 
-run "agent_is_attached_to_the_vpc_and_both_gateways" {
+run "agent_reaches_the_vpc_through_the_egress_gateway" {
   command = apply
 
   assert {
@@ -150,8 +150,13 @@ run "agent_is_attached_to_the_vpc_and_both_gateways" {
   }
 
   assert {
-    condition     = length(google_vertex_ai_reasoning_engine.agent.spec[0].deployment_spec[0].psc_interface_config) == 1
-    error_message = "The agent must be attached to the VPC through a PSC interface."
+    condition     = length(google_vertex_ai_reasoning_engine.agent.spec[0].deployment_spec[0].psc_interface_config) == 0
+    error_message = "psc_interface_config and agent_gateway_config cannot be set together: no direct PSC interface."
+  }
+
+  assert {
+    condition     = google_network_services_agent_connectivity_template.egress.egress_network_config[0].network_attachment != null
+    error_message = "The egress gateway must reach the VPC through a network attachment."
   }
 
   assert {

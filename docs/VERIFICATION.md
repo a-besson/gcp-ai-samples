@@ -61,3 +61,12 @@ Hypothèses de modélisation à valider au premier apply (voir aussi le README d
 - PSC-I et `agent_gateway_config` sur le même moteur.
 - Service agents : `gcp-sa-aiplatform-re` existe quand l'API Agent Platform est activée (lié au CMEK du moteur).
 - `google_project_service_identity` pour `cloudfunctions.googleapis.com` et `run.googleapis.com`.
+
+## Résultats du premier apply (2026-10-01)
+
+| Sujet | Résultat |
+|---|---|
+| PSC-I + `agent_gateway_config` | **Incompatibles** : `spec.deployment_spec.psc_interface_config and spec.deployment_spec.agent_gateway_config cannot be both set` (HTTP 400). Le rattachement au VPC passe par le `network_attachment` du modèle de connectivité de la gateway de sortie. |
+| Point d'entrée de l'agent | Doit être un objet exposant `query`/`stream_query`/`async_stream_query` : `AdkApp(agent=root_agent)`, pas un `LlmAgent` brut. |
+| Chemin du dépôt Artifact Registry | Cloud Functions exige `projects/<p>/locations/<l>/repositories/<r>`. |
+| Agents de service | Course de propagation IAM (« does not exist ») : attente de 30 s avant l'octroi sur la clé KMS. |

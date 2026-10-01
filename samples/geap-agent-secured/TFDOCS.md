@@ -33,7 +33,6 @@ No modules.
 | [google_agent_registry_service.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/agent_registry_service) | resource |
 | [google_cloud_run_v2_service_iam_member.agent_invokes_function](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
 | [google_cloudfunctions2_function.action](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloudfunctions2_function) | resource |
-| [google_compute_network_attachment.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network_attachment) | resource |
 | [google_compute_network_attachment.gateway_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network_attachment) | resource |
 | [google_iap_agent_registry_endpoint_iam_member.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_agent_registry_endpoint_iam_member) | resource |
 | [google_kms_crypto_key_iam_member.function_agents](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member) | resource |

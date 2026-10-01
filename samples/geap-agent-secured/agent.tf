@@ -1,4 +1,4 @@
-# Agent Runtime engine: Agent Identity, CMEK, attached to the VPC, both gateways, sandboxed code.
+# Agent Runtime engine: Agent Identity, CMEK, both gateways (VPC access through the egress gateway), sandboxed code.
 resource "google_vertex_ai_reasoning_engine" "agent" {
   display_name = local.agent_name
   description  = "Secured ADK agent: scoped bucket access, backend function, sandboxed code execution"
@@ -28,11 +28,8 @@ resource "google_vertex_ai_reasoning_engine" "agent" {
       min_instances = var.min_instances
       max_instances = var.max_instances
 
-      # Attach the agent to the Belgium VPC through Private Service Connect
-      psc_interface_config {
-        network_attachment = google_compute_network_attachment.agent.id
-      }
-
+      # The API forbids psc_interface_config together with agent_gateway_config: the agent reaches the
+      # Belgium VPC through the egress gateway, whose connectivity template carries the PSC attachment.
       agent_gateway_config {
         client_to_agent_config {
           agent_gateway = google_network_services_agent_gateway.ingress.id

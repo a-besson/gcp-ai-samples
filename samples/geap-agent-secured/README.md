@@ -15,7 +15,7 @@ An ADK agent on **Agent Runtime** that answers a simple question, reads and writ
 - Bucket access restricted to the `agent-workspace/` managed folder.
 - Backend Cloud Run function (internal ingress, dedicated service accounts, no role).
 - Sandboxed code execution (hermetic, no network) through `AgentEngineSandboxCodeExecutor`.
-- Agent attached to the VPC through a Private Service Connect interface.
+- Agent reaches the Belgium VPC through the egress gateway (Private Service Connect attachment).
 - Optional semantic governance policy (Preview).
 
 ## 🧭 Architecture
@@ -25,8 +25,8 @@ graph TD
     C[Client] -->|query| GI[Agent Gateway<br/>CLIENT_TO_AGENT]
     GI -->|prompt / answer| MA[Model Armor<br/>europe-west1]
     GI --> RT[Agent Runtime<br/>Agent Identity + CMEK]
-    RT -->|PSC interface| VPC[Belgium VPC]
     RT -->|egress| GE[Agent Gateway<br/>AGENT_TO_ANYWHERE<br/>default deny]
+    GE -->|PSC attachment| VPC[Belgium VPC]
     GE -->|iap.egressor| REG[(Agent Registry<br/>allowlist)]
     GE --> LLM[Gemini regional endpoint]
     GE --> GCS[(Bucket<br/>agent-workspace/ only)]
@@ -61,6 +61,7 @@ sequenceDiagram
 | Bucket scope | Managed folder + `objectUser` | IAM conditions do not restrict object listing; agent identities cannot hold `legacyBucket*` roles |
 | Function trigger | HTTPS call with an ID token through the egress gateway | Shows registry + `iap.egressor` allowlisting |
 | Sandbox | `AgentEngineSandboxCodeExecutor` on the agent's own engine | No Terraform cycle; disabled with a warning if the engine cannot be resolved |
+| VPC attachment | Through the egress gateway connectivity template | The API forbids a direct PSC interface on an engine that uses an Agent Gateway |
 | Egress policy | `google_agent_registry_service` + `google_iap_agent_registry_endpoint_iam_member` | Everything is Terraform ([ADR 001](../../docs/adr/001-terraform-first-mechanism-matrix.md)) |
 | Semantic governance | Opt-in flag, Preview | Billed per LLM evaluation; not default |
 
@@ -73,7 +74,7 @@ sequenceDiagram
 | Prompt / answer screening | Model Armor (prompt injection, jailbreak, malicious URL, RAI, SDP) at the ingress gateway |
 | Egress | Default deny; explicit allowlist in `registry.tf` (exact hostnames, standard and mTLS) |
 | Data at rest | One CMEK key (bucket, function, agent) |
-| Network | PSC interface on a /28 subnet; function `ALLOW_INTERNAL_ONLY`; no NAT, no public IP |
+| Network | VPC access through the egress gateway PSC attachment (/28 subnet); function `ALLOW_INTERNAL_ONLY`; no NAT, no public IP |
 | Sovereignty | `region` validated to `europe-west1`; model calls pinned to the regional endpoint (`config.py` rejects any other location) |
 | Defence in depth | Tool-level path scoping on top of IAM; payload and file size limits |
 
@@ -116,7 +117,7 @@ task e2e        # optional end-to-end checks against the deployed agent (billabl
 | Egress registry model | Registered services of type endpoint appear as registry endpoints (`data.google_agent_registry_endpoint`); adjust the filter if the display name differs |
 | Function call from the agent | Agent Identity can mint an ID token for the function URL (`GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES`); the internal-only function is reachable through the egress gateway |
 | Sandbox | The platform injects `GOOGLE_CLOUD_AGENT_ENGINE_ID`, otherwise set `AGENT_ENGINE_RESOURCE_NAME` |
-| PSC interface + gateway | Both blocks coexist on one engine |
+| VPC attachment | The API rejects `psc_interface_config` together with `agent_gateway_config` (confirmed at first apply): the VPC is reached through the egress gateway attachment only |
 | Model availability | The model in `var.model` is served by the `europe-west1` regional endpoint |
 
 ### Semantic governance wiring (optional)
