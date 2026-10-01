@@ -12,6 +12,7 @@ Prerequisites: `terraform`, `tflint`, `terraform-docs`, `pre-commit`, `task`, `g
 ```bash
 cp .env.example .env      # fill in the placeholders
 pre-commit install        # installs pre-commit and commit-msg hooks
+task setup                # installs tools (Brewfile), hooks, TFLint plugins
 task bootstrap            # creates the Terraform state bucket (europe-west1)
 task --list
 ```
@@ -20,7 +21,7 @@ task --list
 
 | Name | Description | README |
 |---|---|---|
-| `base` | Shared foundations: single KMS key, Belgium VPC, logging | [samples/base](samples/base/README.md) *(planned)* |
+| `base` | Shared foundations: single KMS key, Belgium VPC, logging | [samples/base](samples/base/README.md) |
 | `geap-agent-simple` | ADK agent on Agent Runtime answering a question through an LLM | [samples/geap-agent-simple](samples/geap-agent-simple/README.md) *(planned)* |
 | `geap-agent-secured` | Agent behind Agent Gateways with Model Armor, sandboxed code execution, scoped bucket access and Cloud Run function | [samples/geap-agent-secured](samples/geap-agent-secured/README.md) *(planned)* |
 
@@ -28,6 +29,7 @@ task --list
 
 | Command | Description |
 |---|---|
+| `task setup` / `task doctor` | Install workstation dependencies / check them |
 | `task bootstrap` | Create the Terraform state bucket (idempotent) |
 | `task lint` | Run all pre-commit hooks |
 | `task scan` | KICS + Trivy (HIGH/CRITICAL fail) |

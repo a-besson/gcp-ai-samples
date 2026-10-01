@@ -3,3 +3,8 @@ severity:
   - HIGH
   - CRITICAL
 exit-code: 1
+scan:
+  # Downloaded provider binaries and virtualenvs are not repository dependencies
+  skip-dirs:
+    - "**/.terraform"
+    - "**/.venv"

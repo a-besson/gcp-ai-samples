@@ -1,0 +1,55 @@
+# Shared foundations: KMS key, Belgium VPC, logging, Artifact Registry, budget.
+version: "3"
+
+env:
+  TF_VAR_project_id: "{{.GCP_PROJECT_ID}}"
+  TF_VAR_region: "{{.GCP_REGION}}"
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  init:
+    desc: Initialise Terraform with the remote GCS backend (run `task bootstrap` at the root first)
+    cmds:
+      - terraform init -reconfigure -input=false -backend-config="bucket=$TF_STATE_BUCKET"
+
+  plan:
+    desc: Plan the base stack
+    deps: [init]
+    cmds:
+      - terraform plan -input=false -out=base.tfplan
+
+  apply:
+    desc: "WARNING: provisions resources (KMS key cannot be fully destroyed) - applies the saved plan"
+    prompt: Apply the base stack to the configured project?
+    deps: [plan]
+    cmds:
+      - terraform apply -input=false base.tfplan
+
+  destroy:
+    desc: "WARNING: deletes the base stack - the KMS key is protected by prevent_destroy and must be removed from state first"
+    deps: [init]
+    prompt: Destroy the base stack?
+    cmds:
+      - terraform destroy -input=false
+
+  validate:
+    desc: Validate the configuration without backend or credentials
+    cmds:
+      - terraform init -reconfigure -backend=false -input=false
+      - terraform validate
+
+  test:
+    desc: Run the offline Terraform tests (mock providers, no credentials)
+    cmds:
+      - terraform init -reconfigure -backend=false -input=false
+      - terraform test
+
+  docs:
+    desc: Regenerate TFDOCS.md (also done by pre-commit)
+    cmds:
+      - terraform-docs markdown table --output-file TFDOCS.md --output-mode inject .
