@@ -1,0 +1,46 @@
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/*.tfplan
+**/*.tfstate
+**/*.tfstate.backup
+
+# Pre-commit cache
+.precommitcache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# IA
+NOTE.md
+PROMPT.md
+TODO.md
+CLAUDE.local.md
+.claude/CLAUDE.local.md
+
+# Taskfile
+.taskrc.yml
+
+# Agents
+skills-lock.json
+
+# Env/vars files
+.env
+terraform.tfvars
+
+# Maven
+**/target/
+.m2/
+# Build artifacts
+**/build/
