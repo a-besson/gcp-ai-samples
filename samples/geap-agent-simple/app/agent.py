@@ -6,6 +6,7 @@ from typing import Any
 from google.adk.agents import LlmAgent
 from google.adk.models import Gemini
 from google.genai import types
+from vertexai.agent_engines import AdkApp
 
 from config import Config, load_config
 from logger import get_logger
@@ -52,5 +53,9 @@ def build_agent(config: Config) -> LlmAgent:
     )
 
 
-# Entrypoint object referenced by the Terraform python_spec (entrypoint_object = "root_agent")
+# `root_agent` is what ADK tooling (adk web, evals) loads.
 root_agent = build_agent(load_config())
+
+# Agent Runtime serves an object that exposes query methods (query, stream_query, async_stream_query...):
+# a bare LlmAgent fails to start. This is the entrypoint of the Terraform python_spec.
+adk_app = AdkApp(agent=root_agent)

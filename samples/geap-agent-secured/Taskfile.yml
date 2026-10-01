@@ -51,14 +51,14 @@ tasks:
     prompt: Deploy the secured stack? Gateways and the agent runtime are billed while they exist.
     deps: [plan]
     cmds:
-      - terraform apply -input=false secured.tfplan
+      - terraform apply -input=false -auto-approve secured.tfplan
 
   destroy:
     desc: "WARNING: deletes the secured stack, including the data bucket and its objects"
     deps: [init]
     prompt: Destroy the secured stack (the data bucket content is deleted)?
     cmds:
-      - terraform destroy -input=false
+      - terraform destroy -input=false -auto-approve
 
   invoke:
     desc: 'Ask the deployed agent a question, e.g. task invoke -- "Write hello in agent-workspace/a.txt"'

@@ -60,14 +60,14 @@ tasks:
     prompt: Deploy the simple agent to the configured project?
     deps: [plan]
     cmds:
-      - terraform apply -input=false simple.tfplan
+      - terraform apply -input=false -auto-approve simple.tfplan
 
   destroy:
     desc: "WARNING: deletes the deployed agent"
     deps: [init]
     prompt: Destroy the simple agent?
     cmds:
-      - terraform destroy -input=false
+      - terraform destroy -input=false -auto-approve
 
   invoke:
     desc: 'Ask the deployed agent a question, e.g. task invoke -- "What is the capital of Belgium?"'

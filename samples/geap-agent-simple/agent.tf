@@ -20,7 +20,7 @@ resource "google_vertex_ai_reasoning_engine" "agent" {
       python_spec {
         version           = "3.13" # latest version supported by Agent Runtime
         entrypoint_module = "agent"
-        entrypoint_object = "root_agent"
+        entrypoint_object = "adk_app" # AdkApp wrapper exposing the query methods
       }
     }
 

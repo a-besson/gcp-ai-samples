@@ -28,14 +28,14 @@ tasks:
     prompt: Apply the base stack to the configured project?
     deps: [plan]
     cmds:
-      - terraform apply -input=false base.tfplan
+      - terraform apply -input=false -auto-approve base.tfplan
 
   destroy:
     desc: "WARNING: deletes the base stack - the KMS key is protected by prevent_destroy and must be removed from state first"
     deps: [init]
     prompt: Destroy the base stack?
     cmds:
-      - terraform destroy -input=false
+      - terraform destroy -input=false -auto-approve
 
   validate:
     desc: Validate the configuration without backend or credentials

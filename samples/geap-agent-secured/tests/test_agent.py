@@ -47,6 +47,13 @@ def test_agent_has_the_three_tools_and_no_sandbox_without_engine() -> None:
     assert agent.code_executor is None
 
 
+def test_entrypoint_exposes_query_methods() -> None:
+    # Agent Runtime refuses a bare LlmAgent: the entrypoint must be an AdkApp
+    agent_module = importlib.import_module("agent")
+    assert callable(agent_module.adk_app.async_stream_query)
+    assert callable(agent_module.adk_app.stream_query)
+
+
 def test_agent_attaches_sandbox_when_engine_is_known(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AGENT_ENGINE_RESOURCE_NAME", "projects/p/locations/europe-west1/reasoningEngines/1")
     agent_module = importlib.import_module("agent")

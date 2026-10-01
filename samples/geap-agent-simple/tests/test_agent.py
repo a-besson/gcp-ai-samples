@@ -38,6 +38,8 @@ def test_root_agent_is_built_without_calling_the_llm() -> None:
     assert agent.name == "simple_agent"
     assert agent.tools == []
     assert agent_module.root_agent.name == "simple_agent"
+    # Agent Runtime needs an object exposing query methods, not a bare LlmAgent
+    assert callable(agent_module.adk_app.async_stream_query)
 
 
 def test_after_model_logs_usage(caplog: pytest.LogCaptureFixture) -> None:
