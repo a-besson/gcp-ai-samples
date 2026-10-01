@@ -2,6 +2,7 @@
 # no credentials, no cloud call.
 mock_provider "google" {}
 mock_provider "google-beta" {}
+mock_provider "time" {}
 
 # Project billing link not readable by default (as with an unknown account)
 override_data {
@@ -130,4 +131,32 @@ run "budget_uses_the_billing_account_linked_to_the_project" {
     condition     = length(google_billing_budget.this) == 1 && google_billing_budget.this[0].billing_account == "ABCDEF-123456-ABCDEF"
     error_message = "The budget must fall back to the billing account linked to the project."
   }
+}
+
+run "cmek_is_granted_to_the_service_agents" {
+  command = apply
+
+  variables {
+    extra_cmek_service_agents = ["service-123456789012@gcp-sa-aiplatform-re.iam.gserviceaccount.com"]
+  }
+
+  assert {
+    condition     = toset(keys(google_kms_crypto_key_iam_member.cmek_users)) == toset(["storage", "artifact_registry", "aiplatform", "extra_0"])
+    error_message = "The key must be granted to storage, Artifact Registry, Agent Platform and the extra agents."
+  }
+
+  assert {
+    condition     = alltrue([for m in google_kms_crypto_key_iam_member.cmek_users : m.role == "roles/cloudkms.cryptoKeyEncrypterDecrypter"])
+    error_message = "Service agents must only get encrypter/decrypter on the key."
+  }
+}
+
+run "rejects_non_service_account_emails" {
+  command = plan
+
+  variables {
+    extra_cmek_service_agents = ["someone@example.com"]
+  }
+
+  expect_failures = [var.extra_cmek_service_agents]
 }

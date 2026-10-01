@@ -1,5 +1,6 @@
 # Offline assertions on the security invariants (mocked providers and remote state, no credentials).
 mock_provider "google" {}
+mock_provider "google-beta" {}
 mock_provider "archive" {}
 mock_provider "time" {}
 
@@ -80,6 +81,15 @@ run "function_is_internal_only_with_dedicated_accounts" {
   assert {
     condition     = google_cloudfunctions2_function.action.kms_key_name == "projects/my-gcp-project-id/locations/europe-west1/keyRings/kr-gcp-samples/cryptoKeys/key-gcp-samples"
     error_message = "The function must use the shared CMEK key."
+  }
+}
+
+run "function_service_agents_can_use_the_key" {
+  command = apply
+
+  assert {
+    condition     = toset(keys(google_kms_crypto_key_iam_member.function_agents)) == toset(["cloudfunctions.googleapis.com", "run.googleapis.com"])
+    error_message = "The Cloud Functions and Cloud Run service agents must be granted on the shared key."
   }
 }
 

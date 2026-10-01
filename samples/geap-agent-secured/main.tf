@@ -8,6 +8,11 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 8.5"
     }
+    # Only for google_project_service_identity (service agents)
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 8.5"
+    }
     archive = {
       source  = "hashicorp/archive"
       version = "~> 2.7"
@@ -21,6 +26,16 @@ terraform {
 }
 
 provider "google" {
+  project = var.project_id
+  region  = var.region
+
+  user_project_override = true
+  billing_project       = var.project_id
+
+  default_labels = local.labels
+}
+
+provider "google-beta" {
   project = var.project_id
   region  = var.region
 

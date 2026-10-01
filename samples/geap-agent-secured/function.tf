@@ -16,6 +16,32 @@ resource "google_project_iam_member" "function_build" {
   member  = "serviceAccount:${google_service_account.function_build.email}"
 }
 
+# Service agents encrypting the function with the shared key. They are granted here (not in samples/base)
+# because only this sample deploys a function.
+resource "google_project_service_identity" "function_agents" {
+  provider = google-beta
+  for_each = toset(["cloudfunctions.googleapis.com", "run.googleapis.com"])
+
+  project = var.project_id
+  service = each.value
+}
+
+# A freshly created service agent is not immediately known to IAM: wait before binding it
+resource "time_sleep" "function_agents" {
+  create_duration = "30s"
+  depends_on      = [google_project_service_identity.function_agents]
+}
+
+resource "google_kms_crypto_key_iam_member" "function_agents" {
+  for_each = google_project_service_identity.function_agents
+
+  crypto_key_id = local.base.kms_key_id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  member        = "serviceAccount:${each.value.email}"
+
+  depends_on = [time_sleep.function_agents]
+}
+
 resource "google_cloudfunctions2_function" "action" {
   name        = "fn-agent-action"
   location    = var.region
@@ -48,5 +74,8 @@ resource "google_cloudfunctions2_function" "action" {
     ingress_settings = "ALLOW_INTERNAL_ONLY"
   }
 
-  depends_on = [google_project_iam_member.function_build]
+  depends_on = [
+    google_project_iam_member.function_build,
+    google_kms_crypto_key_iam_member.function_agents,
+  ]
 }

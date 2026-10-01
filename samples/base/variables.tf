@@ -68,3 +68,14 @@ variable "log_retention_days" {
     error_message = "log_retention_days must be between 1 and 365."
   }
 }
+
+variable "extra_cmek_service_agents" {
+  type        = list(string)
+  description = "Additional service agent emails granted on the shared key, e.g. the Agent Runtime agent service-<PROJECT_NUMBER>@gcp-sa-aiplatform-re.iam.gserviceaccount.com if the agent engine CMEK needs it."
+  default     = []
+
+  validation {
+    condition     = alltrue([for email in var.extra_cmek_service_agents : can(regex("^[a-z0-9._-]+@[a-z0-9.-]+\\.gserviceaccount\\.com$", email))])
+    error_message = "extra_cmek_service_agents must contain service account emails (…gserviceaccount.com)."
+  }
+}

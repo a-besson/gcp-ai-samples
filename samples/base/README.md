@@ -33,7 +33,7 @@ graph TD
 | Encryption | One CMEK key shared by all samples | Single point of control and rotation |
 | Egress | No NAT, no external IP | No internet path by design; Private Google Access for Google APIs |
 | Logs | Regional bucket + exclusion on `_Default` | Application logs stay in Belgium (`_Required` audit logs remain global) |
-| Service agents | Base grants GCS, Artifact Registry, Agent Platform (and its Agent Runtime agent), Cloud Run and Cloud Functions agents on the key | One owner for the key bindings: samples never share an IAM binding |
+| Service agents | Base grants GCS, Artifact Registry and Agent Platform agents on the key (30 s wait for IAM propagation); `extra_cmek_service_agents` adds more (e.g. the Agent Runtime agent); Cloud Run/Functions agents are granted by `geap-agent-secured` | One owner per key binding: samples never share an IAM binding |
 
 ## 🔒 Security Design
 

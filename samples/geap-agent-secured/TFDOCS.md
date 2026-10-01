@@ -8,6 +8,7 @@
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.16 |
 | <a name="requirement_archive"></a> [archive](#requirement\_archive) | ~> 2.7 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | ~> 8.5 |
+| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 8.5 |
 | <a name="requirement_time"></a> [time](#requirement\_time) | ~> 0.13 |
 
 ## Providers
@@ -16,6 +17,7 @@
 | ---- | ------- |
 | <a name="provider_archive"></a> [archive](#provider\_archive) | 2.8.1 |
 | <a name="provider_google"></a> [google](#provider\_google) | 8.5.0 |
+| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 8.5.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 | <a name="provider_time"></a> [time](#provider\_time) | 0.14.2 |
 
@@ -27,12 +29,14 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
+| [google-beta_google_project_service_identity.function_agents](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/google_project_service_identity) | resource |
 | [google_agent_registry_service.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/agent_registry_service) | resource |
 | [google_cloud_run_v2_service_iam_member.agent_invokes_function](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
 | [google_cloudfunctions2_function.action](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloudfunctions2_function) | resource |
 | [google_compute_network_attachment.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network_attachment) | resource |
 | [google_compute_network_attachment.gateway_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network_attachment) | resource |
 | [google_iap_agent_registry_endpoint_iam_member.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_agent_registry_endpoint_iam_member) | resource |
+| [google_kms_crypto_key_iam_member.function_agents](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member) | resource |
 | [google_model_armor_template.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/model_armor_template) | resource |
 | [google_network_security_authz_policy.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_security_authz_policy) | resource |
 | [google_network_services_agent_connectivity_template.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_connectivity_template) | resource |
@@ -51,6 +55,7 @@ No modules.
 | [google_vertex_ai_semantic_governance_policy.agent_scope](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy) | resource |
 | [google_vertex_ai_semantic_governance_policy_engine.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy_engine) | resource |
 | [time_sleep.agent_ingestion](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
+| [time_sleep.function_agents](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [time_sleep.registry_ingestion](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [archive_file.function_src](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
 | [google_agent_registry_agent.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/agent_registry_agent) | data source |
