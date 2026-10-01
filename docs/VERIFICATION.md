@@ -70,3 +70,14 @@ Hypothèses de modélisation à valider au premier apply (voir aussi le README d
 | Point d'entrée de l'agent | Doit être un objet exposant `query`/`stream_query`/`async_stream_query` : `AdkApp(agent=root_agent)`, pas un `LlmAgent` brut. |
 | Chemin du dépôt Artifact Registry | Cloud Functions exige `projects/<p>/locations/<l>/repositories/<r>`. |
 | Agents de service | Course de propagation IAM (« does not exist ») : attente de 30 s avant l'octroi sur la clé KMS. |
+
+## Analyse des logs de l'agent sécurisé (2026-10-01)
+
+| Constat | Détail |
+|---|---|
+| Toute requête de l'agent est refusée par la gateway de sortie | 217 entrées `gateway_requests` : `CONNECT 240.0.0.2:443`, HTTP 403, règle `default_denied` (le nom d'hôte réel n'apparaît pas dans ce journal). |
+| Démarrage | `Failed to convert project number to project ID` : appels gRPC vers Resource Manager (non enregistré) → 60 s de timeout puis démarrage avec le numéro de projet. |
+| Requêtes | La création de session vers `europe-west1-aiplatform.mtls.googleapis.com` échoue (`ConnectionResetError`) alors que l'hôte était enregistré et accordé. |
+| Corrections apportées | Hôtes ajoutés (`cloudresourcemanager` ± mTLS, `cloudtrace`, `secretmanager`, `aiplatform.<région>.rep`), binding `JSONRPC` (celui de la doc) au lieu de `HTTP_JSON`, rôles `browser`, `agentregistry.viewer`, `monitoring.metricWriter`, `cloudtrace.agent` pour l'identité de l'agent, logs d'audit IAP Data Access activés. |
+| Non confirmé | Que `JSONRPC` soit bien la cause du refus de l'hôte déjà enregistré : à vérifier avec le journal d'audit IAP après réapplication. |
+| Trust domain | L'identité réelle est `agents.global.org-<ORG_ID>...` : le projet est donc rattaché à une organisation (contrairement à ce qui avait été indiqué). Le principal est dérivé de `effective_identity`, donc sans impact. |

@@ -42,6 +42,7 @@ No modules.
 | [google_network_services_agent_gateway.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) | resource |
 | [google_network_services_agent_gateway.ingress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) | resource |
 | [google_network_services_authz_extension.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_authz_extension) | resource |
+| [google_project_iam_audit_config.iap](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_audit_config) | resource |
 | [google_project_iam_member.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.function_build](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_service_account.function_build](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |

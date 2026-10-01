@@ -120,6 +120,27 @@ task e2e        # optional end-to-end checks against the deployed agent (billabl
 | VPC attachment | The API rejects `psc_interface_config` together with `agent_gateway_config` (confirmed at first apply): the VPC is reached through the egress gateway attachment only |
 | Model availability | The model in `var.model` is served by the `europe-west1` regional endpoint |
 
+### Troubleshooting egress (Agent Gateway)
+
+The egress gateway denies everything that is not registered **and** granted `roles/iap.egressor` to the agent identity; a denial shows up as `403 Egress request is not authorized` or as connection errors in the agent logs.
+
+```bash
+# Agent runtime logs (build, start-up, requests)
+gcloud logging read 'resource.type="aiplatform.googleapis.com/ReasoningEngine" AND severity>=WARNING' --project="$GCP_PROJECT_ID" --freshness=1h
+
+# Gateway decisions (stored in the europe-west1 log bucket of samples/base)
+gcloud logging read 'logName:"gateway_requests"' --project="$GCP_PROJECT_ID" --bucket=logs-gcp-samples-ew1 --location=europe-west1 --view=_AllLogs --freshness=1h
+
+# IAP egress authorization (Data Access audit logs, enabled by this sample)
+gcloud logging read 'protoPayload.serviceName="iap.googleapis.com" AND protoPayload.authorizationInfo.permission="iap.resources.egressViaIAP"' --project="$GCP_PROJECT_ID" --freshness=1h
+```
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Failed to convert project number to project ID` at start-up | Resource Manager hostname not allowed, or `roles/browser` missing | Both are in this sample; the first start-up of a new engine can still log it once, because the grants can only exist after the engine (its principal) does |
+| `Cannot connect to host <host>:443` / `503 ... 240.0.0.2:443` | Hostname not in `registry.tf` (exact match, standard **and** `.mtls.` variants), or no `iap.egressor` grant | Register the host and re-apply |
+| `unregisteredResource` in the IAP audit log | Destination not registered in Agent Registry | Add it to `local.egress_endpoints` |
+
 ### Semantic governance wiring (optional)
 
 `enable_semantic_governance = true` creates the policy engine and an agent-scope policy. Attaching the engine to the egress gateway needs the engine DNS hostname, which the provider does not expose: create the authz extension and the authz policy as described in the [semantic governance guide](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/policies/configure-semantic-governance) (policy on `:generateContent` and `:streamGenerateContent` only, start in `DRY_RUN`). It cannot be combined with Model Armor on the ingress gateway, hence the egress attachment.

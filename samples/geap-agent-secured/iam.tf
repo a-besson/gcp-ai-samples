@@ -5,8 +5,12 @@ locals {
 
 resource "google_project_iam_member" "agent" {
   for_each = toset([
-    "roles/aiplatform.user",   # call Gemini on the regional endpoint and use the code sandbox
-    "roles/logging.logWriter", # write the agent logs (token usage, duration)
+    "roles/aiplatform.user",         # call Gemini on the regional endpoint and use the code sandbox
+    "roles/browser",                 # start-up: resourcemanager.projects.get (project number -> ID)
+    "roles/agentregistry.viewer",    # resolve registered endpoints through the Agent Gateway
+    "roles/logging.logWriter",       # write the agent logs (token usage, duration)
+    "roles/monitoring.metricWriter", # runtime metrics
+    "roles/cloudtrace.agent",        # runtime traces
   ])
 
   project = var.project_id

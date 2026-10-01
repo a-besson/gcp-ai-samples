@@ -19,5 +19,6 @@
 - **base**: enable the full Agent Platform API set (Agent Identity, App Hub, App Topology, Cloud API Registry, Dataform, Notebooks, Observability, App Lifecycle Manager, Security Command Center, Text-to-Speech)
 - **base / geap-agent-secured**: fix function build repository — `artifact_registry_repository` output is now the full path (`.id`), and the function builds the path from the repository ID
 - **geap-agent-secured**: remove `psc_interface_config` from the engine (rejected by the API together with `agent_gateway_config`); the VPC is reached through the egress gateway attachment; drop the unused agent network attachment
+- **geap-agent-secured**: fix egress denials seen in agent runtime logs — allow Resource Manager/Cloud Trace/Secret Manager/aiplatform `rep` hosts, register endpoints with the `JSONRPC` binding, grant the runtime roles (browser, agentregistry.viewer, metric/trace writers), enable IAP Data Access audit logs, add egress troubleshooting guide
 - **scan**: exclude `.terraform`/`.venv` from Trivy and KICS; pin KICS image to `v2.1.20` (v2.2.0 not published on Docker Hub)
 - **adr**: add ADR 001-004 (mechanism order, Agent Identity, Model Armor at gateway, dual gateway)

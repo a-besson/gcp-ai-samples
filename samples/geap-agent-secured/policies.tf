@@ -11,6 +11,18 @@ resource "google_iap_agent_registry_endpoint_iam_member" "egress" {
   member      = local.agent_principal
 }
 
+# Egress decisions (iap.resources.egressViaIAP) are Data Access audit logs, off by default: enable them
+# so that a denied destination (labels."iap.googleapis.com/audited_resource_name" = unregisteredResource
+# or a missing grant) can be diagnosed from Cloud Logging.
+resource "google_project_iam_audit_config" "iap" {
+  project = var.project_id
+  service = "iap.googleapis.com"
+
+  audit_log_config {
+    log_type = "DATA_READ"
+  }
+}
+
 # --- Semantic governance (flag enable_semantic_governance) ---------------------------------------
 # The deployed agent is ingested into Agent Registry, which gives the policy its agent ID.
 # NOTE: this provisions the policy engine and the agent-scope policy. Wiring the engine to the

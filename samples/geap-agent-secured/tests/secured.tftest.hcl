@@ -55,8 +55,8 @@ run "agent_identity_has_least_privilege" {
   command = apply
 
   assert {
-    condition     = toset(keys(google_project_iam_member.agent)) == toset(["roles/aiplatform.user", "roles/logging.logWriter"])
-    error_message = "Project-level roles of the agent must be exactly aiplatform.user and logging.logWriter."
+    condition     = toset(keys(google_project_iam_member.agent)) == toset(["roles/aiplatform.user", "roles/browser", "roles/agentregistry.viewer", "roles/logging.logWriter", "roles/monitoring.metricWriter", "roles/cloudtrace.agent"])
+    error_message = "Project-level roles of the agent must be exactly the documented runtime roles (no editor/owner)."
   }
 
   assert {
@@ -179,8 +179,27 @@ run "every_egress_endpoint_is_registered_and_granted" {
   }
 
   assert {
+    condition     = alltrue([for key in ["cloudresourcemanager", "cloudresourcemanager-mtls", "aiplatform-regional-mtls", "aiplatform-rep", "cloudtrace", "secretmanager"] : contains(keys(local.egress_endpoints), key)])
+    error_message = "The start-up and session endpoints required by Agent Runtime must be on the allowlist."
+  }
+
+  assert {
+    condition     = alltrue([for s in google_agent_registry_service.egress : s.interfaces[0].protocol_binding == "JSONRPC"])
+    error_message = "Egress endpoints must be registered with the JSONRPC binding used by the gateway documentation."
+  }
+
+  assert {
     condition     = alltrue([for m in google_iap_agent_registry_endpoint_iam_member.egress : m.role == "roles/iap.egressor"])
     error_message = "Egress grants must use roles/iap.egressor only."
+  }
+}
+
+run "egress_decisions_are_audited" {
+  command = apply
+
+  assert {
+    condition     = google_project_iam_audit_config.iap.service == "iap.googleapis.com"
+    error_message = "IAP Data Access audit logs must be enabled to diagnose egress denials."
   }
 }
 

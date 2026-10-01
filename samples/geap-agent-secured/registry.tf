@@ -3,22 +3,34 @@
 locals {
   # Exact hostnames only (no wildcards): standard and mTLS variants are listed separately.
   egress_endpoints = {
+    # Vertex AI / Agent Platform: every variant is required (sessions use the regional mTLS host)
     aiplatform-regional      = "https://${var.region}-aiplatform.googleapis.com"
     aiplatform-regional-mtls = "https://${var.region}-aiplatform.mtls.googleapis.com"
+    aiplatform-rep           = "https://aiplatform.${var.region}.rep.googleapis.com"
     aiplatform               = "https://aiplatform.googleapis.com"
     aiplatform-mtls          = "https://aiplatform.mtls.googleapis.com"
     agentregistry            = "https://agentregistry.googleapis.com"
-    logging                  = "https://logging.googleapis.com"
-    logging-mtls             = "https://logging.mtls.googleapis.com"
-    telemetry                = "https://telemetry.googleapis.com"
-    telemetry-mtls           = "https://telemetry.mtls.googleapis.com"
-    monitoring               = "https://monitoring.googleapis.com"
-    monitoring-mtls          = "https://monitoring.mtls.googleapis.com"
-    iamcredentials           = "https://iamcredentials.googleapis.com"
-    iamcredentials-mtls      = "https://iamcredentials.mtls.googleapis.com"
-    storage                  = "https://storage.googleapis.com"
-    storage-mtls             = "https://storage.mtls.googleapis.com"
-    backend-function         = google_cloudfunctions2_function.action.service_config[0].uri
+    # Start-up of the runtime converts the project number to a project ID (Resource Manager)
+    cloudresourcemanager      = "https://cloudresourcemanager.googleapis.com"
+    cloudresourcemanager-mtls = "https://cloudresourcemanager.mtls.googleapis.com"
+    # Observability
+    logging         = "https://logging.googleapis.com"
+    logging-mtls    = "https://logging.mtls.googleapis.com"
+    telemetry       = "https://telemetry.googleapis.com"
+    telemetry-mtls  = "https://telemetry.mtls.googleapis.com"
+    monitoring      = "https://monitoring.googleapis.com"
+    monitoring-mtls = "https://monitoring.mtls.googleapis.com"
+    cloudtrace      = "https://cloudtrace.googleapis.com"
+    cloudtrace-mtls = "https://cloudtrace.mtls.googleapis.com"
+    # Credentials and secrets used by the runtime
+    iamcredentials      = "https://iamcredentials.googleapis.com"
+    iamcredentials-mtls = "https://iamcredentials.mtls.googleapis.com"
+    secretmanager       = "https://secretmanager.googleapis.com"
+    secretmanager-mtls  = "https://secretmanager.mtls.googleapis.com"
+    # Data used by the agent tools
+    storage          = "https://storage.googleapis.com"
+    storage-mtls     = "https://storage.mtls.googleapis.com"
+    backend-function = google_cloudfunctions2_function.action.service_config[0].uri
   }
 }
 
@@ -31,8 +43,9 @@ resource "google_agent_registry_service" "egress" {
   description  = "Egress endpoint allowed for ${local.agent_name}"
 
   interfaces {
-    url              = each.value
-    protocol_binding = "HTTP_JSON"
+    url = each.value
+    # JSONRPC is the binding the Agent Gateway documentation uses for Google API endpoints
+    protocol_binding = "JSONRPC"
   }
 
   endpoint_spec {
