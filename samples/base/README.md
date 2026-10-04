@@ -8,6 +8,7 @@ Common resources consumed by every GEAP sample through `terraform_remote_state`:
 
 - Single Cloud KMS key in `europe-west1` (90-day rotation, `prevent_destroy`).
 - Custom-mode VPC `vpc-gcp-samples` with a workloads subnet and a subnet reserved for PSC interface network attachments.
+- Private Service Connect endpoint for Google APIs (`all-apis`, `240.0.0.10`) and a private `run.app.` zone pointing to it: internal-only Cloud Run services are reachable from the VPC (and from Agent Gateways peered with the zone).
 - Logs kept in Belgium (regional bucket) with the global `_Default` sink excluded.
 - CMEK-protected Artifact Registry repository (immutable tags).
 - Budget alerts at 50 / 90 / 100 % (optional): billing account from `TF_VAR_billing_account`, else the one linked to the project when readable, else disabled.
@@ -22,6 +23,8 @@ graph TD
     VPC[VPC vpc-gcp-samples] --> SN1[snet-workloads-ew1<br/>10.10.0.0/24]
     VPC --> SN2[snet-psc-attach-ew1<br/>10.10.1.0/28]
     SN2 --> NA[Network attachments<br/>created per sample]
+    VPC --> PSC[PSC endpoint Google APIs<br/>all-apis 240.0.0.10]
+    DNS[Private zone run.app.<br/>*.run.app -> 240.0.0.10] --> PSC
     LOG[Log bucket<br/>europe-west1] --- SINK[Project sink]
 ```
 
@@ -32,6 +35,7 @@ graph TD
 | Region | `europe-west1` only (`validation {}` enforced) | Data sovereignty |
 | Encryption | One CMEK key shared by all samples | Single point of control and rotation |
 | Egress | No NAT, no external IP | No internet path by design; Private Google Access for Google APIs |
+| Internal Cloud Run | PSC endpoint for Google APIs + private `run.app.` zone | `ALLOW_INTERNAL_ONLY` services only accept traffic entering from the VPC; Agent Gateways peer with the zone (`run_app_private_dns_name` output) |
 | Logs | Regional bucket + exclusion on `_Default` | Application logs stay in Belgium (`_Required` audit logs remain global) |
 | Service agents | Base grants GCS, Artifact Registry and Agent Platform agents on the key (30 s wait for IAM propagation); `extra_cmek_service_agents` adds more (e.g. the Agent Runtime agent); Cloud Run/Functions agents are granted by `geap-agent-secured` | One owner per key binding: samples never share an IAM binding |
 
@@ -47,6 +51,8 @@ graph TD
 |---|---|---|
 | Cloud KMS key | ~0.06 USD / key version / month | Rotation adds a version every 90 days |
 | VPC, subnets, firewall | 0 | Flow logs sampled at 50 %, ingested in the regional log bucket |
+| PSC endpoint for Google APIs | Hourly charge per endpoint + data processed — check the VPC pricing page | One endpoint for every sample |
+| Cloud DNS private zone | Monthly fee per zone + queries | One zone (`run.app.`) |
 | Artifact Registry | storage only | Untagged images cleaned after 30 days |
 | Log bucket | free allotment then per GiB | Retention 30 days by default |
 
@@ -87,7 +93,8 @@ samples/base/
 ├── backend.tf            # GCS backend (bucket injected at init)
 ├── variables.tf  outputs.tf
 ├── kms.tf                # shared CMEK key + service agent bindings
-├── network.tf            # VPC, subnets, deny-all ingress
+├── network.tf            # VPC, subnets, deny-all ingress, PSC endpoint for Google APIs
+├── dns.tf                # private run.app. zone -> PSC endpoint
 ├── logging.tf            # regional log bucket and sink
 ├── artifact_registry.tf  # Docker repository (CMEK)
 ├── budget.tf             # billing budget (optional)

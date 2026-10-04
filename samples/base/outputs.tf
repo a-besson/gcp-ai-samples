@@ -38,6 +38,11 @@ output "subnet_psc_attach_id" {
   value       = module.vpc.subnets["${var.region}/snet-psc-attach-ew1"].id
 }
 
+output "run_app_private_dns_name" {
+  description = "DNS name of the private zone sending *.run.app to the PSC endpoint for Google APIs (for Agent Gateway DNS peering)."
+  value       = google_dns_managed_zone.run_app.dns_name
+}
+
 output "artifact_registry_repository" {
   description = "Full resource path (projects/<p>/locations/<l>/repositories/<r>) of the CMEK-protected Docker repository, as expected by Cloud Functions builds."
   value       = google_artifact_registry_repository.docker.id

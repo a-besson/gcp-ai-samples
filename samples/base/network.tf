@@ -49,3 +49,25 @@ module "vpc" {
 
   depends_on = [google_project_service.apis]
 }
+
+# Private Service Connect endpoint for Google APIs (all-apis bundle, which includes *.run.app): internal-only
+# Cloud Run services accept the traffic sent to this private address from the VPC. The secured agent's egress
+# gateway reaches it through its network attachment, resolving run.app with the private zone of dns.tf.
+resource "google_compute_global_address" "psc_google_apis" {
+  name         = "ip-psc-google-apis"
+  address_type = "INTERNAL"
+  purpose      = "PRIVATE_SERVICE_CONNECT"
+  network      = module.vpc.network_id
+  # Class E address outside every subnet, as in the Agent Gateway VPC egress guide: the gateway routes
+  # private ranges (RFC 1918 and 240.0.0.0/4) through the VPC by default.
+  address = "240.0.0.10"
+}
+
+resource "google_compute_global_forwarding_rule" "psc_google_apis" {
+  # 1-20 lowercase letters and digits only (naming rule of PSC endpoints for Google APIs)
+  name                  = "pscgoogleapis"
+  target                = "all-apis"
+  network               = module.vpc.network_id
+  ip_address            = google_compute_global_address.psc_google_apis.id
+  load_balancing_scheme = ""
+}

@@ -33,6 +33,10 @@
 | [google-beta_google_project_service_identity.artifact_registry](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/google_project_service_identity) | resource |
 | [google_artifact_registry_repository.docker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository) | resource |
 | [google_billing_budget.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_budget) | resource |
+| [google_compute_global_address.psc_google_apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address) | resource |
+| [google_compute_global_forwarding_rule.psc_google_apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule) | resource |
+| [google_dns_managed_zone.run_app](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone) | resource |
+| [google_dns_record_set.run_app](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set) | resource |
 | [google_kms_crypto_key_iam_member.cmek_users](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member) | resource |
 | [google_logging_project_bucket_config.regional](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_bucket_config) | resource |
 | [google_logging_project_exclusion.default_sink](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/logging_project_exclusion) | resource |
@@ -68,6 +72,7 @@
 | <a name="output_network_name"></a> [network\_name](#output\_network\_name) | Name of the shared VPC. |
 | <a name="output_project_number"></a> [project\_number](#output\_project\_number) | Project number, used to build Agent Identity principals and service agent emails. |
 | <a name="output_region"></a> [region](#output\_region) | Region of all regional resources (Belgium). |
+| <a name="output_run_app_private_dns_name"></a> [run\_app\_private\_dns\_name](#output\_run\_app\_private\_dns\_name) | DNS name of the private zone sending *.run.app to the PSC endpoint for Google APIs (for Agent Gateway DNS peering). |
 | <a name="output_subnet_psc_attach_id"></a> [subnet\_psc\_attach\_id](#output\_subnet\_psc\_attach\_id) | ID of the subnet reserved for PSC interface network attachments. |
 | <a name="output_subnet_workloads_id"></a> [subnet\_workloads\_id](#output\_subnet\_workloads\_id) | ID of the workloads subnet. |
 <!-- END_TF_DOCS -->

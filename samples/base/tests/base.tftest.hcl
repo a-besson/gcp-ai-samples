@@ -160,3 +160,22 @@ run "rejects_non_service_account_emails" {
 
   expect_failures = [var.extra_cmek_service_agents]
 }
+
+run "cloud_run_is_reached_through_psc_from_the_vpc" {
+  command = apply
+
+  assert {
+    condition     = google_compute_global_forwarding_rule.psc_google_apis.target == "all-apis" && google_compute_global_address.psc_google_apis.purpose == "PRIVATE_SERVICE_CONNECT"
+    error_message = "A PSC endpoint for Google APIs (all-apis, includes run.app) must exist on the VPC."
+  }
+
+  assert {
+    condition     = google_dns_managed_zone.run_app.visibility == "private" && google_dns_managed_zone.run_app.dns_name == "run.app."
+    error_message = "run.app must be resolved by a private zone visible from the VPC only."
+  }
+
+  assert {
+    condition     = google_dns_record_set.run_app.name == "*.run.app." && google_dns_record_set.run_app.rrdatas == tolist([google_compute_global_address.psc_google_apis.address])
+    error_message = "*.run.app must resolve to the PSC endpoint address."
+  }
+}
