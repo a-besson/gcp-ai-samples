@@ -6,7 +6,7 @@ The smallest GEAP sample: an ADK agent deployed on **Agent Runtime** that takes 
 
 ## ✨ Features
 
-- ADK `LlmAgent` without tools, model served by the regional `europe-west1` endpoint.
+- ADK `LlmAgent` without tools; agent in `europe-west1`, model served by the regional endpoint of an EU region (`model_location`, `europe-west3` by default for `gemini-3.5-flash`).
 - Deployed from source by Terraform (`source_code_spec` + `python_spec`): no container to build.
 - **Agent Identity** (no service account, no key) with two roles only.
 - Engine encrypted with the shared CMEK key from `samples/base`.
@@ -18,7 +18,7 @@ The smallest GEAP sample: an ADK agent deployed on **Agent Runtime** that takes 
 sequenceDiagram
     participant U as Caller (IAM user)
     participant RT as Agent Runtime<br/>europe-west1
-    participant M as Gemini<br/>europe-west1 endpoint
+    participant M as Gemini<br/>EU regional endpoint (europe-west3)
     U->>RT: streamQuery(question)
     RT->>M: generateContent (Agent Identity)
     M-->>RT: answer + usage
@@ -38,7 +38,7 @@ sequenceDiagram
 
 ## 🔒 Security Design
 
-- `region` is locked to `europe-west1` by a `validation {}` block; `config.py` refuses any other `MODEL_LOCATION` at start-up.
+- `region` is locked to `europe-west1` by a `validation {}` block; `model_location` is restricted to EU member-state regions, both in Terraform and in `config.py` at start-up (`europe-west2`, `europe-west6` and the `eu` multi-region, which has no mTLS host, are refused).
 - The agent identity only holds `roles/aiplatform.user` and `roles/logging.logWriter` (project level, the minimum to call Gemini and log).
 - No secret anywhere: the agent uses its identity; configuration comes from environment variables.
 

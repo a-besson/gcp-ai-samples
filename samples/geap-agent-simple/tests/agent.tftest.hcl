@@ -73,3 +73,22 @@ run "rejects_unbounded_instances" {
 
   expect_failures = [var.max_instances]
 }
+
+run "model_runs_in_an_eu_region" {
+  command = plan
+
+  assert {
+    condition     = contains([for e in google_vertex_ai_reasoning_engine.agent.spec[0].deployment_spec[0].env : "${e.name}=${e.value}"], "MODEL_LOCATION=europe-west3")
+    error_message = "The model must run in europe-west3 by default while the agent stays in europe-west1."
+  }
+}
+
+run "rejects_non_eu_model_location" {
+  command = plan
+
+  variables {
+    model_location = "europe-west2"
+  }
+
+  expect_failures = [var.model_location]
+}

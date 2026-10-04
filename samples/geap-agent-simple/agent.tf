@@ -34,7 +34,7 @@ resource "google_vertex_ai_reasoning_engine" "agent" {
       }
       env {
         name  = "MODEL_LOCATION"
-        value = var.region
+        value = var.model_location
       }
     }
   }

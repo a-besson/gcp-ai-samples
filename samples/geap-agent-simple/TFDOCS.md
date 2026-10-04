@@ -35,9 +35,10 @@ No modules.
 | <a name="input_env"></a> [env](#input\_env) | Environment label applied to every resource. | `string` | `"sandbox"` | no |
 | <a name="input_max_instances"></a> [max\_instances](#input\_max\_instances) | Maximum instances, bounded to protect the budget. | `number` | `2` | no |
 | <a name="input_min_instances"></a> [min\_instances](#input\_min\_instances) | Minimum warm instances (0 = scale to zero, cheapest). | `number` | `0` | no |
-| <a name="input_model"></a> [model](#input\_model) | Gemini model name served by the regional europe-west1 endpoint. Check availability before changing it. | `string` | `"gemini-3.5-flash"` | no |
+| <a name="input_model"></a> [model](#input\_model) | Gemini model name, served by the regional endpoint of model\_location. Check availability before changing it (europe-west1 serves gemini-2.5-* only). | `string` | `"gemini-3.5-flash"` | no |
+| <a name="input_model_location"></a> [model\_location](#input\_model\_location) | EU region whose regional endpoint serves the model. Inference stays in the EU; the agent stays in var.region. | `string` | `"europe-west3"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | GCP project ID hosting the samples (from GCP\_PROJECT\_ID in .env). | `string` | n/a | yes |
-| <a name="input_region"></a> [region](#input\_region) | Region of the agent and of the model endpoint. Locked to Belgium for data sovereignty. | `string` | `"europe-west1"` | no |
+| <a name="input_region"></a> [region](#input\_region) | Region of the agent. Locked to Belgium for data sovereignty. | `string` | `"europe-west1"` | no |
 | <a name="input_state_bucket"></a> [state\_bucket](#input\_state\_bucket) | GCS bucket holding the Terraform state of samples/base (TF\_STATE\_BUCKET in .env). | `string` | n/a | yes |
 
 ## Outputs
