@@ -45,6 +45,11 @@ resource "google_vertex_ai_reasoning_engine" "agent" {
       }
       env {
         name  = "MODEL_LOCATION"
+        value = var.model_location
+      }
+      # Region of the engine itself (sandbox resource name), distinct from the model location
+      env {
+        name  = "ENGINE_LOCATION"
         value = var.region
       }
       env {

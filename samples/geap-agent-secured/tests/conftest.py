@@ -12,3 +12,4 @@ def _env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AGENT_ENGINE_RESOURCE_NAME", raising=False)
     monkeypatch.delenv("GOOGLE_CLOUD_AGENT_ENGINE_ID", raising=False)
     monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+    monkeypatch.delenv("ENGINE_LOCATION", raising=False)

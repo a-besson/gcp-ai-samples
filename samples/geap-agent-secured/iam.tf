@@ -35,3 +35,11 @@ resource "google_cloud_run_v2_service_iam_member" "agent_invokes_function" {
   role     = "roles/run.invoker"
   member   = local.agent_principal
 }
+
+# The Agent Gateway service agent resolves run.app through the private zone of samples/base (DNS peering of
+# the egress connectivity template): roles/dns.peer is the role the VPC connectivity guide requires.
+resource "google_project_iam_member" "agent_gateway_dns_peer" {
+  project = var.project_id
+  role    = "roles/dns.peer"
+  member  = "serviceAccount:service-${local.base.project_number}@gcp-sa-agentgateway.iam.gserviceaccount.com"
+}

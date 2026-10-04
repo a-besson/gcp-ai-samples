@@ -1,8 +1,14 @@
 # Agent Registry: every endpoint the agent may reach through the egress gateway is registered here,
 # then granted roles/iap.egressor to the agent identity (policies.tf). Anything else is denied.
 locals {
+  # Model calls go to the regional endpoint of var.model_location (EU region, see variables.tf)
+  model_endpoints = var.model_location == var.region ? tomap({}) : tomap({
+    model      = "https://${var.model_location}-aiplatform.googleapis.com"
+    model-mtls = "https://${var.model_location}-aiplatform.mtls.googleapis.com"
+  })
+
   # Exact hostnames only (no wildcards): standard and mTLS variants are listed separately.
-  egress_endpoints = {
+  egress_endpoints = merge(local.model_endpoints, {
     # Vertex AI / Agent Platform: every variant is required (sessions use the regional mTLS host)
     aiplatform-regional      = "https://${var.region}-aiplatform.googleapis.com"
     aiplatform-regional-mtls = "https://${var.region}-aiplatform.mtls.googleapis.com"
@@ -31,7 +37,7 @@ locals {
     storage          = "https://storage.googleapis.com"
     storage-mtls     = "https://storage.mtls.googleapis.com"
     backend-function = google_cloudfunctions2_function.action.service_config[0].uri
-  }
+  })
 }
 
 resource "google_agent_registry_service" "egress" {

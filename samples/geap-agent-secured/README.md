@@ -9,11 +9,11 @@ An ADK agent on **Agent Runtime** that answers a simple question, reads and writ
 
 ## ✨ Features
 
-- Agent Identity, CMEK, `europe-west1` only.
+- Agent Identity, CMEK; every resource in `europe-west1`, model inference in an EU region (`europe-west3` by default, `model_location`).
 - Ingress gateway (`CLIENT_TO_AGENT`) with Model Armor screening prompts and answers.
 - Egress gateway (`AGENT_TO_ANYWHERE`), **default deny**: IAP is the gateway authorizer (`REQUEST_AUTHZ` policy); only endpoints registered in Agent Registry and granted `roles/iap.egressor` are reachable.
 - Bucket access restricted to the `agent-workspace/` managed folder.
-- Backend Cloud Run function (internal ingress, dedicated service accounts, no role).
+- Backend Cloud Run function (internal ingress, dedicated service accounts, no role), reached from the egress gateway through the VPC (DNS peering on `run.app.` → PSC endpoint for Google APIs of `samples/base`).
 - Sandboxed code execution (hermetic, no network) through `AgentEngineSandboxCodeExecutor`.
 - Agent reaches the Belgium VPC through the egress gateway (Private Service Connect attachment).
 - Optional semantic governance policy (Preview).
@@ -28,9 +28,10 @@ graph TD
     RT -->|egress| GE[Agent Gateway<br/>AGENT_TO_ANYWHERE<br/>default deny]
     GE -->|PSC attachment| VPC[Belgium VPC]
     GE -->|iap.egressor| REG[(Agent Registry<br/>allowlist)]
-    GE --> LLM[Gemini regional endpoint]
+    GE --> LLM[Gemini regional endpoint<br/>EU model_location]
     GE --> GCS[(Bucket<br/>agent-workspace/ only)]
-    GE --> FN[Cloud Run function<br/>internal only]
+    VPC --> PSC[PSC endpoint Google APIs<br/>run.app private zone]
+    PSC --> FN[Cloud Run function<br/>internal only]
     RT --> SB[Code sandbox<br/>no network]
 ```
 
@@ -59,7 +60,9 @@ sequenceDiagram
 | Gateways | Two, one per governed access path | `CLIENT_TO_AGENT` and `AGENT_TO_ANYWHERE` are distinct modes ([ADR 004](../../docs/adr/004-dual-agent-gateway.md)) |
 | Model Armor | Enforced at the ingress gateway (authz extension + `CONTENT_AUTHZ` policy), fail closed | No guardrail code in the agent ([ADR 003](../../docs/adr/003-model-armor-at-gateway.md)) |
 | Bucket scope | Managed folder + `objectUser` | IAM conditions do not restrict object listing; agent identities cannot hold `legacyBucket*` roles |
-| Function trigger | HTTPS call with an ID token through the egress gateway | Shows registry + `iap.egressor` allowlisting |
+| Function trigger | HTTPS call with an ID token through the egress gateway, then the VPC: the connectivity template peers `run.app.` with the private zone of `samples/base` (PSC endpoint for Google APIs) | An `ALLOW_INTERNAL_ONLY` service answers `404 Page not found` to traffic that does not enter from the VPC; the gateway otherwise reaches `*.run.app` over the Google network |
+| Connectivity template | ID suffixed by a hash of its network settings, `create_before_destroy` | The API rejects any update of a referenced template (`cannot update agent connectivity template that is referenced by an agent gateway`): a change creates a new template, switches the gateway in place, then deletes the old one |
+| Model location | `model_location` (EU regions only, default `europe-west3`), passed to the model client only | `gemini-3.x` is not served in `europe-west1`; the `eu` multi-region has no mTLS host (Agent Identity uses mTLS); sessions and sandbox stay on the engine region (`ENGINE_LOCATION`) |
 | Sandbox | `AgentEngineSandboxCodeExecutor` on the agent's own engine | No Terraform cycle; disabled with a warning if the engine cannot be resolved |
 | VPC attachment | Through the egress gateway connectivity template | The API forbids a direct PSC interface on an engine that uses an Agent Gateway |
 | Egress policy | `google_agent_registry_service` + `google_iap_agent_registry_endpoint_iam_member`, evaluated by an IAP authz extension (`REQUEST_AUTHZ`, IAM Allow policy `V1`, fail closed) on the egress gateway | Everything is Terraform ([ADR 001](../../docs/adr/001-terraform-first-mechanism-matrix.md)); without the IAP policy the gateway denies every request (`default_denied`) |
@@ -74,8 +77,8 @@ sequenceDiagram
 | Prompt / answer screening | Model Armor (prompt injection, jailbreak, malicious URL, RAI, SDP) at the ingress gateway |
 | Egress | Default deny; IAP authorizes each request against the explicit allowlist in `registry.tf` (exact hostnames, standard and mTLS) |
 | Data at rest | One CMEK key (bucket, function, agent) |
-| Network | VPC access through the egress gateway PSC attachment (/28 subnet); function `ALLOW_INTERNAL_ONLY`; no NAT, no public IP |
-| Sovereignty | `region` validated to `europe-west1`; model calls pinned to the regional endpoint (`config.py` rejects any other location) |
+| Network | VPC access through the egress gateway PSC attachment (/28 subnet); function `ALLOW_INTERNAL_ONLY`, reached through the PSC endpoint for Google APIs; no NAT, no public IP |
+| Sovereignty | `region` validated to `europe-west1` for every resource; `model_location` validated to EU member-state regions (Terraform and `config.py`); regional endpoints only, never `global` |
 | Defence in depth | Tool-level path scoping on top of IAM; payload and file size limits |
 
 > [!IMPORTANT]
@@ -89,6 +92,7 @@ sequenceDiagram
 | Agent Runtime | vCPU/GiB-hours while an instance is up | `min_instances = 0` |
 | Model Armor | Free monthly allotment, then per volume | Keep templates as is |
 | Cloud Run function, GCS, KMS | Cents for a demo | — |
+| PSC endpoint for Google APIs + private DNS zone | Owned by `samples/base`: hourly charge per PSC endpoint + data processed, monthly fee per zone — check the pricing pages | Needed only for the internal-only function |
 | Semantic governance | LLM call per evaluation | Off by default |
 
 > [!TIP]
@@ -115,10 +119,10 @@ task e2e        # optional end-to-end checks against the deployed agent (billabl
 |---|---|
 | CMEK on the agent engine | The Agent Runtime service agent can use the key (granted in `samples/base`); if the apply fails on the key, re-run once the service agent exists |
 | Egress registry model | Each registered service of type endpoint creates its registry endpoint synchronously (confirmed at first apply): its name is the service `registry_resource` attribute, used directly as the `roles/iap.egressor` target |
-| Function call from the agent | **Open (2026-10-04)**: the call returns `404 Page not found`, the answer Cloud Run gives to a source outside the VPC for an `ALLOW_INTERNAL_ONLY` service. The gateway reaches `*.run.app` over the Google network, not through the VPC: the documented path is a PSC endpoint for Google APIs + a private `run.app.` zone + `dns_peering_config` on the connectivity template |
-| Sandbox | The platform injects `GOOGLE_CLOUD_AGENT_ENGINE_ID`, otherwise set `AGENT_ENGINE_RESOURCE_NAME` |
+| Function call from the agent | Confirmed on 2026-10-04 through the VPC path (DNS peering on `run.app.` → PSC endpoint for Google APIs): Cloud Run logs `POST 200`. Without it, Cloud Run answers `404 Page not found` (traffic from outside the VPC) |
+| Sandbox | **Open (2026-10-04)**: the executor creates one sandbox per session. On this gateway-bound engine, creation took 3 to 9 min without DNS peering and failed with `UNAVAILABLE` (twice) with it, against 3 to 5 s on the `geap-agent-simple` engine (no gateway). A code-execution query therefore exceeds the 180 s client timeout, and while the executor polls the creation it blocks the instance. See `docs/VERIFICATION.md` |
 | VPC attachment | The API rejects `psc_interface_config` together with `agent_gateway_config` (confirmed at first apply): the VPC is reached through the egress gateway attachment only |
-| Model availability | Confirmed on 2026-10-04: the `europe-west1` regional endpoint serves `gemini-2.5-flash`, `gemini-2.5-flash-lite` and `gemini-2.5-pro`; `gemini-3.x` models return `404 Publisher model ... was not found` there |
+| Model availability | Confirmed on 2026-10-04: `gemini-3.5-flash` is served by `europe-west3` (and the `eu` multi-region, excluded: no mTLS host), not by `europe-west1`, which serves `gemini-2.5-*` only |
 
 ### Troubleshooting egress (Agent Gateway)
 
@@ -140,7 +144,10 @@ gcloud logging read 'protoPayload.serviceName="iap.googleapis.com" AND protoPayl
 | `Failed to convert project number to project ID` at start-up | Resource Manager hostname not allowed, or `roles/browser` missing | Both are in this sample; the first start-up of a new engine can still log it once, because the grants can only exist after the engine (its principal) does |
 | Every gateway entry is `CONNECT 240.0.0.2:443`, rule `default_denied`, no `authzPolicyInfo` | No IAP `REQUEST_AUTHZ` policy on the egress gateway: nothing evaluates the `iap.egressor` grants | `google_network_security_authz_policy.iap_egress` (`policies.tf`) |
 | `Cannot connect to host <host>:443` / `authzPolicyInfo.result` denied | Hostname not in `registry.tf` (exact match, standard **and** `.mtls.` variants), or no `iap.egressor` grant | Register the host and re-apply |
-| `404 Publisher model ... was not found` | Model not served by the `europe-west1` regional endpoint | Use a `gemini-2.5-*` model (`var.model`) |
+| `404 Publisher model ... was not found` | Model not served by the regional endpoint of `model_location` | Pick an EU region that serves it (`europe-west3` for `gemini-3.5-flash`) or a `gemini-2.5-*` model in `europe-west1` |
+| `403 Egress request is not authorized` right after adding a host | New `iap.egressor` grant not propagated yet | Retry after ~2 min |
+| Function call returns `404 Page not found` | The gateway reaches `*.run.app` outside the VPC, refused by the `ALLOW_INTERNAL_ONLY` ingress | DNS peering on `run.app.` (`gateway.tf`) + PSC endpoint and private zone (`samples/base`) |
+| `cannot update agent connectivity template that is referenced by an agent gateway` | Templates are immutable while referenced | Handled by the hashed template ID + `create_before_destroy` (`gateway.tf`) |
 | `unregisteredResource` in the IAP audit log | Destination not registered in Agent Registry | Add it to `local.egress_endpoints` |
 
 ### Semantic governance wiring (optional)

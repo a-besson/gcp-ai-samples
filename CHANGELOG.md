@@ -1,12 +1,14 @@
 # Changelog
 
-## [2026-10-04] - Daily Log - Secured agent egress: plan-time registry lookup, IAP authorizer and regional model
+## [2026-10-04] - Daily Log - Secured agent egress: plan-time registry lookup, IAP authorizer, EU inference and private path to the internal function
 
 - **geap-agent-secured**: fix `secured:plan` failing with `did not find an Endpoint ... matching filter displayName=...` — the IAP grants now read the endpoint from `google_agent_registry_service.registry_resource` instead of a registry lookup that ran at plan time (untriggered `time_sleep`); the data source and the 60 s wait are removed
 - **geap-agent-secured**: fix every egress request being denied (`default_denied`) — attach an IAP authz extension (`REQUEST_AUTHZ`, IAM Allow policy `V1`, fail closed) to the egress gateway so the `roles/iap.egressor` grants are evaluated; offline test added
-- **geap-agent-secured**: fix model calls returning 404 — default model back to `gemini-2.5-flash`, `gemini-3.x` is not served by the `europe-west1` regional endpoint
+- **geap-agent-secured / geap-agent-simple**: fix model calls returning 404 (`gemini-3.5-flash` is not served in `europe-west1`) — inference now runs in an EU region (`model_location`, EU member-state regions only, default `europe-west3`) passed to the model client only, while resources, sessions and sandbox stay in `europe-west1`; model hosts added to the secured egress allowlist
 - **geap-agent-secured**: fix `task invoke` truncating the question to its first word (double quoting of `CLI_ARGS`)
-- **docs**: record the 2026-10-04 re-apply results in `docs/VERIFICATION.md`; README troubleshooting updated (IAP decision in the gateway log, open point on the internal function)
+- **base**: add a Private Service Connect endpoint for Google APIs (`all-apis`) and a private `run.app.` zone pointing to it, exported as `run_app_private_dns_name`
+- **geap-agent-secured**: fix the internal-only function answering `404 Page not found` to the agent — the egress connectivity template peers `run.app.` with the base private zone (`roles/dns.peer` for the Agent Gateway service agent); the template ID carries a hash of its network settings with `create_before_destroy`, since a template referenced by a gateway cannot be updated
+- **docs**: record the 2026-10-04 re-apply results in `docs/VERIFICATION.md`; READMEs updated (IAP decision in the gateway log, EU inference, private path to the function, template naming)
 
 ## [2026-10-01] - Daily Log - Repository bootstrap, GEAP verification and CI foundations
 

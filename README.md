@@ -40,6 +40,7 @@ task --list
 ## 🔒 Security & sovereignty
 
 - Regional resources only in `europe-west1`; one CMEK key shared by all samples.
+- Model inference on regional endpoints of EU member-state regions only (`model_location`, `europe-west3` by default: `gemini-3.5-flash` is not served in `europe-west1`).
 - Agent Identity (no service-account keys), least-privilege IAM bound to the agent principal.
 - Private networking: no public IP, no NAT, Private Google Access.
 - CI limited to lint, tests, `terraform validate` and KICS/Trivy scans; GitHub Actions pinned by SHA.

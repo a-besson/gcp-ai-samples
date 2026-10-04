@@ -46,6 +46,7 @@ No modules.
 | [google_network_services_authz_extension.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_authz_extension) | resource |
 | [google_project_iam_audit_config.iap](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_audit_config) | resource |
 | [google_project_iam_member.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
+| [google_project_iam_member.agent_gateway_dns_peer](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.function_build](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_service_account.function_build](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.function_runtime](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
@@ -72,9 +73,10 @@ No modules.
 | <a name="input_function_source_dir"></a> [function\_source\_dir](#input\_function\_source\_dir) | Directory holding the Cloud Run function source (main.py, requirements.txt). | `string` | `"function_src"` | no |
 | <a name="input_max_instances"></a> [max\_instances](#input\_max\_instances) | Maximum instances, bounded to protect the budget. | `number` | `2` | no |
 | <a name="input_min_instances"></a> [min\_instances](#input\_min\_instances) | Minimum warm instances (0 = scale to zero, cheapest). | `number` | `0` | no |
-| <a name="input_model"></a> [model](#input\_model) | Gemini model name served by the regional europe-west1 endpoint (gemini-2.5-*; gemini-3.x is not served there). Check availability before changing it. | `string` | `"gemini-2.5-flash"` | no |
+| <a name="input_model"></a> [model](#input\_model) | Gemini model name, served by the regional endpoint of model\_location. Check availability before changing it (europe-west1 serves gemini-2.5-* only). | `string` | `"gemini-3.5-flash"` | no |
+| <a name="input_model_location"></a> [model\_location](#input\_model\_location) | EU region whose regional endpoint serves the model. Inference stays in the EU; the resources stay in var.region. | `string` | `"europe-west3"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | GCP project ID hosting the samples (from GCP\_PROJECT\_ID in .env). | `string` | n/a | yes |
-| <a name="input_region"></a> [region](#input\_region) | Region of every resource and of the model endpoint. Locked to Belgium for data sovereignty. | `string` | `"europe-west1"` | no |
+| <a name="input_region"></a> [region](#input\_region) | Region of every resource (agent engine, gateways, bucket, function). Locked to Belgium for data sovereignty. | `string` | `"europe-west1"` | no |
 | <a name="input_semantic_policy"></a> [semantic\_policy](#input\_semantic\_policy) | Natural-language constraint enforced by the semantic governance policy (only used when enable\_semantic\_governance is true). | `string` | `"The agent only writes plain-text reports under agent-workspace/ and only calls the backend function with a small JSON payload."` | no |
 | <a name="input_state_bucket"></a> [state\_bucket](#input\_state\_bucket) | GCS bucket holding the Terraform state of samples/base (TF\_STATE\_BUCKET in .env). | `string` | n/a | yes |
 

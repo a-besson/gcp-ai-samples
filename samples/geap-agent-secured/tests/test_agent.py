@@ -8,9 +8,9 @@ import pytest
 from config import ConfigError, load_config
 
 
-def test_config_defaults_to_belgium() -> None:
+def test_config_defaults_to_an_eu_model_location() -> None:
     cfg = load_config()
-    assert cfg.location == "europe-west1"
+    assert cfg.location == "europe-west3"
     assert cfg.bucket == "test-bucket"
     assert cfg.engine_resource_name is None
 
@@ -22,11 +22,21 @@ def test_config_requires_variables(monkeypatch: pytest.MonkeyPatch, name: str) -
         load_config()
 
 
-def test_config_rejects_other_regions_and_http_urls(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("MODEL_LOCATION", "us-central1")
+@pytest.mark.parametrize("location", ["europe-west1", "europe-west3", "europe-west9"])
+def test_config_accepts_eu_model_locations(monkeypatch: pytest.MonkeyPatch, location: str) -> None:
+    monkeypatch.setenv("MODEL_LOCATION", location)
+    assert load_config().location == location
+
+
+@pytest.mark.parametrize("location", ["us-central1", "europe-west2", "europe-west6", "eu", "global"])
+def test_config_rejects_non_eu_model_locations(monkeypatch: pytest.MonkeyPatch, location: str) -> None:
+    # europe-west2 (London) and europe-west6 (Zurich) are outside the EU; "eu" has no mTLS host
+    monkeypatch.setenv("MODEL_LOCATION", location)
     with pytest.raises(ConfigError):
         load_config()
-    monkeypatch.delenv("MODEL_LOCATION")
+
+
+def test_config_rejects_http_urls(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FUNCTION_URL", "http://insecure.example.test")
     with pytest.raises(ConfigError):
         load_config()
@@ -35,9 +45,19 @@ def test_config_rejects_other_regions_and_http_urls(monkeypatch: pytest.MonkeyPa
 def test_engine_resource_name_from_runtime_variables(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GOOGLE_CLOUD_AGENT_ENGINE_ID", "123")
     monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "my-gcp-project-id")
+    monkeypatch.setenv("ENGINE_LOCATION", "europe-west1")
+    monkeypatch.setenv("MODEL_LOCATION", "europe-west3")
+    # The engine keeps its own region, whatever the model location
     assert load_config().engine_resource_name == (
         "projects/my-gcp-project-id/locations/europe-west1/reasoningEngines/123"
     )
+
+
+def test_model_client_uses_the_model_location(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MODEL_LOCATION", "europe-west9")
+    agent_module = importlib.import_module("agent")
+    agent = agent_module.build_agent(load_config())
+    assert agent.model.client_kwargs == {"location": "europe-west9"}
 
 
 def test_agent_has_the_three_tools_and_no_sandbox_without_engine() -> None:

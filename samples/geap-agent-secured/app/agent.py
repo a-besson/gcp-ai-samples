@@ -49,6 +49,8 @@ def build_agent(config: Config) -> LlmAgent:
     """Build the agent; the sandbox is attached only when its hosting engine is known."""
     model = Gemini(
         model=config.model,
+        # Model location (EU region) for this client only, independent of the engine region
+        client_kwargs={"location": config.location},
         retry_options=types.HttpRetryOptions(attempts=3, initial_delay=1.0, max_delay=10.0, exp_base=2.0),
     )
     code_executor = None

@@ -12,6 +12,8 @@ override_data {
       project_number                  = "123456789012"
       subnet_psc_attach_id            = "projects/my-gcp-project-id/regions/europe-west1/subnetworks/snet-psc-attach-ew1"
       artifact_registry_repository_id = "ar-gcp-samples"
+      network_id                      = "projects/my-gcp-project-id/global/networks/vpc-gcp-samples"
+      run_app_private_dns_name        = "run.app."
     }
   }
 }
@@ -192,6 +194,62 @@ run "every_egress_endpoint_is_registered_and_granted" {
     condition     = alltrue([for m in google_iap_agent_registry_endpoint_iam_member.egress : m.role == "roles/iap.egressor"])
     error_message = "Egress grants must use roles/iap.egressor only."
   }
+}
+
+run "internal_function_is_reached_through_the_vpc" {
+  command = apply
+
+  assert {
+    condition     = google_network_services_agent_connectivity_template.egress.egress_network_config[0].dns_peering_config[0].domains == tolist(["run.app."]) && google_network_services_agent_connectivity_template.egress.egress_network_config[0].dns_peering_config[0].target_network == "projects/my-gcp-project-id/global/networks/vpc-gcp-samples"
+    error_message = "run.app must be resolved through the VPC private zone (PSC endpoint for Google APIs)."
+  }
+
+  assert {
+    condition     = google_project_iam_member.agent_gateway_dns_peer.role == "roles/dns.peer" && google_project_iam_member.agent_gateway_dns_peer.member == "serviceAccount:service-123456789012@gcp-sa-agentgateway.iam.gserviceaccount.com"
+    error_message = "The Agent Gateway service agent needs roles/dns.peer for the DNS peering."
+  }
+
+  assert {
+    condition     = google_cloudfunctions2_function.action.service_config[0].ingress_settings == "ALLOW_INTERNAL_ONLY"
+    error_message = "The backend function must stay internal-only."
+  }
+}
+
+run "model_runs_in_an_eu_region_on_the_allowlist" {
+  command = plan
+
+  assert {
+    condition     = contains([for e in google_vertex_ai_reasoning_engine.agent.spec[0].deployment_spec[0].env : "${e.name}=${e.value}"], "MODEL_LOCATION=europe-west3") && contains([for e in google_vertex_ai_reasoning_engine.agent.spec[0].deployment_spec[0].env : "${e.name}=${e.value}"], "ENGINE_LOCATION=europe-west1")
+    error_message = "The model must run in europe-west3 by default while the engine stays in europe-west1."
+  }
+
+  assert {
+    condition     = local.egress_endpoints["model-mtls"] == "https://europe-west3-aiplatform.mtls.googleapis.com" && local.egress_endpoints["model"] == "https://europe-west3-aiplatform.googleapis.com"
+    error_message = "The model endpoint (standard and mTLS) must be on the egress allowlist."
+  }
+}
+
+run "no_extra_model_endpoint_when_the_model_runs_in_the_engine_region" {
+  command = plan
+
+  variables {
+    model_location = "europe-west1"
+  }
+
+  assert {
+    condition     = !contains(keys(local.egress_endpoints), "model")
+    error_message = "The regional aiplatform hosts already cover a model in the engine region."
+  }
+}
+
+run "rejects_non_eu_model_location" {
+  command = plan
+
+  variables {
+    model_location = "europe-west2"
+  }
+
+  expect_failures = [var.model_location]
 }
 
 run "egress_gateway_delegates_authorization_to_iap" {

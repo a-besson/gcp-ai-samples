@@ -10,7 +10,7 @@ variable "project_id" {
 
 variable "region" {
   type        = string
-  description = "Region of every resource and of the model endpoint. Locked to Belgium for data sovereignty."
+  description = "Region of every resource (agent engine, gateways, bucket, function). Locked to Belgium for data sovereignty."
   default     = "europe-west1"
 
   validation {
@@ -42,12 +42,28 @@ variable "state_bucket" {
 
 variable "model" {
   type        = string
-  description = "Gemini model name served by the regional europe-west1 endpoint (gemini-2.5-*; gemini-3.x is not served there). Check availability before changing it."
-  default     = "gemini-2.5-flash"
+  description = "Gemini model name, served by the regional endpoint of model_location. Check availability before changing it (europe-west1 serves gemini-2.5-* only)."
+  default     = "gemini-3.5-flash"
 
   validation {
     condition     = can(regex("^gemini-[a-z0-9.-]+$", var.model))
-    error_message = "model must be a Gemini model name (e.g. gemini-2.5-flash)."
+    error_message = "model must be a Gemini model name (e.g. gemini-3.5-flash)."
+  }
+}
+
+variable "model_location" {
+  type        = string
+  description = "EU region whose regional endpoint serves the model. Inference stays in the EU; the resources stay in var.region."
+  default     = "europe-west3"
+
+  # EU member-state regions only: europe-west2 (UK) and europe-west6 (Switzerland) are excluded, and so is
+  # the "eu" multi-region, whose mTLS host (used under Agent Identity) does not exist.
+  validation {
+    condition = contains([
+      "europe-central2", "europe-north1", "europe-north2", "europe-southwest1", "europe-west1", "europe-west3",
+      "europe-west4", "europe-west8", "europe-west9", "europe-west10", "europe-west12",
+    ], var.model_location)
+    error_message = "model_location must be an EU region (e.g. europe-west3): data sovereignty requirement."
   }
 }
 
