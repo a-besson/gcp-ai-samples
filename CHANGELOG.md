@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-10-04] - Daily Log - Secured agent egress: plan-time registry lookup, IAP authorizer and regional model
+
+- **geap-agent-secured**: fix `secured:plan` failing with `did not find an Endpoint ... matching filter displayName=...` — the IAP grants now read the endpoint from `google_agent_registry_service.registry_resource` instead of a registry lookup that ran at plan time (untriggered `time_sleep`); the data source and the 60 s wait are removed
+- **geap-agent-secured**: fix every egress request being denied (`default_denied`) — attach an IAP authz extension (`REQUEST_AUTHZ`, IAM Allow policy `V1`, fail closed) to the egress gateway so the `roles/iap.egressor` grants are evaluated; offline test added
+- **geap-agent-secured**: fix model calls returning 404 — default model back to `gemini-2.5-flash`, `gemini-3.x` is not served by the `europe-west1` regional endpoint
+- **geap-agent-secured**: fix `task invoke` truncating the question to its first word (double quoting of `CLI_ARGS`)
+- **docs**: record the 2026-10-04 re-apply results in `docs/VERIFICATION.md`; README troubleshooting updated (IAP decision in the gateway log, open point on the internal function)
+
 ## [2026-10-01] - Daily Log - Repository bootstrap, GEAP verification and CI foundations
 
 - **repo**: initialise git repository, add `PLAN.md` execution plan

@@ -11,7 +11,7 @@ An ADK agent on **Agent Runtime** that answers a simple question, reads and writ
 
 - Agent Identity, CMEK, `europe-west1` only.
 - Ingress gateway (`CLIENT_TO_AGENT`) with Model Armor screening prompts and answers.
-- Egress gateway (`AGENT_TO_ANYWHERE`), **default deny**: only endpoints registered in Agent Registry and granted `roles/iap.egressor` are reachable.
+- Egress gateway (`AGENT_TO_ANYWHERE`), **default deny**: IAP is the gateway authorizer (`REQUEST_AUTHZ` policy); only endpoints registered in Agent Registry and granted `roles/iap.egressor` are reachable.
 - Bucket access restricted to the `agent-workspace/` managed folder.
 - Backend Cloud Run function (internal ingress, dedicated service accounts, no role).
 - Sandboxed code execution (hermetic, no network) through `AgentEngineSandboxCodeExecutor`.
@@ -62,7 +62,7 @@ sequenceDiagram
 | Function trigger | HTTPS call with an ID token through the egress gateway | Shows registry + `iap.egressor` allowlisting |
 | Sandbox | `AgentEngineSandboxCodeExecutor` on the agent's own engine | No Terraform cycle; disabled with a warning if the engine cannot be resolved |
 | VPC attachment | Through the egress gateway connectivity template | The API forbids a direct PSC interface on an engine that uses an Agent Gateway |
-| Egress policy | `google_agent_registry_service` + `google_iap_agent_registry_endpoint_iam_member` | Everything is Terraform ([ADR 001](../../docs/adr/001-terraform-first-mechanism-matrix.md)) |
+| Egress policy | `google_agent_registry_service` + `google_iap_agent_registry_endpoint_iam_member`, evaluated by an IAP authz extension (`REQUEST_AUTHZ`, IAM Allow policy `V1`, fail closed) on the egress gateway | Everything is Terraform ([ADR 001](../../docs/adr/001-terraform-first-mechanism-matrix.md)); without the IAP policy the gateway denies every request (`default_denied`) |
 | Semantic governance | Opt-in flag, Preview | Billed per LLM evaluation; not default |
 
 ## 🔒 Security Design
@@ -72,7 +72,7 @@ sequenceDiagram
 | Identity | `AGENT_IDENTITY`, no service account, no key |
 | Least privilege | Project roles: `aiplatform.user`, `logging.logWriter`. Bucket: `objectUser` on the managed folder only. Function: `run.invoker` on that function only |
 | Prompt / answer screening | Model Armor (prompt injection, jailbreak, malicious URL, RAI, SDP) at the ingress gateway |
-| Egress | Default deny; explicit allowlist in `registry.tf` (exact hostnames, standard and mTLS) |
+| Egress | Default deny; IAP authorizes each request against the explicit allowlist in `registry.tf` (exact hostnames, standard and mTLS) |
 | Data at rest | One CMEK key (bucket, function, agent) |
 | Network | VPC access through the egress gateway PSC attachment (/28 subnet); function `ALLOW_INTERNAL_ONLY`; no NAT, no public IP |
 | Sovereignty | `region` validated to `europe-west1`; model calls pinned to the regional endpoint (`config.py` rejects any other location) |
@@ -114,15 +114,15 @@ task e2e        # optional end-to-end checks against the deployed agent (billabl
 | Point | What to check |
 |---|---|
 | CMEK on the agent engine | The Agent Runtime service agent can use the key (granted in `samples/base`); if the apply fails on the key, re-run once the service agent exists |
-| Egress registry model | Registered services of type endpoint appear as registry endpoints (`data.google_agent_registry_endpoint`); adjust the filter if the display name differs |
-| Function call from the agent | Agent Identity can mint an ID token for the function URL (`GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES`); the internal-only function is reachable through the egress gateway |
+| Egress registry model | Each registered service of type endpoint creates its registry endpoint synchronously (confirmed at first apply): its name is the service `registry_resource` attribute, used directly as the `roles/iap.egressor` target |
+| Function call from the agent | **Open (2026-10-04)**: the call returns `404 Page not found`, the answer Cloud Run gives to a source outside the VPC for an `ALLOW_INTERNAL_ONLY` service. The gateway reaches `*.run.app` over the Google network, not through the VPC: the documented path is a PSC endpoint for Google APIs + a private `run.app.` zone + `dns_peering_config` on the connectivity template |
 | Sandbox | The platform injects `GOOGLE_CLOUD_AGENT_ENGINE_ID`, otherwise set `AGENT_ENGINE_RESOURCE_NAME` |
 | VPC attachment | The API rejects `psc_interface_config` together with `agent_gateway_config` (confirmed at first apply): the VPC is reached through the egress gateway attachment only |
-| Model availability | The model in `var.model` is served by the `europe-west1` regional endpoint |
+| Model availability | Confirmed on 2026-10-04: the `europe-west1` regional endpoint serves `gemini-2.5-flash`, `gemini-2.5-flash-lite` and `gemini-2.5-pro`; `gemini-3.x` models return `404 Publisher model ... was not found` there |
 
 ### Troubleshooting egress (Agent Gateway)
 
-The egress gateway denies everything that is not registered **and** granted `roles/iap.egressor` to the agent identity; a denial shows up as `403 Egress request is not authorized` or as connection errors in the agent logs.
+The egress gateway denies everything that is not registered **and** granted `roles/iap.egressor` to the agent identity; a denial shows up as `403 Egress request is not authorized` or as connection errors in the agent logs. The IAP decision of each request is in the gateway log (`jsonPayload.authzPolicyInfo.result`, with the real URL in `httpRequest.requestUrl`).
 
 ```bash
 # Agent runtime logs (build, start-up, requests)
@@ -131,14 +131,16 @@ gcloud logging read 'resource.type="aiplatform.googleapis.com/ReasoningEngine" A
 # Gateway decisions (stored in the europe-west1 log bucket of samples/base)
 gcloud logging read 'logName:"gateway_requests"' --project="$GCP_PROJECT_ID" --bucket=logs-gcp-samples-ew1 --location=europe-west1 --view=_AllLogs --freshness=1h
 
-# IAP egress authorization (Data Access audit logs, enabled by this sample)
+# IAP egress authorization (Data Access audit logs, enabled by this sample; no entry observed on 2026-10-04, the gateway log above carries the decision)
 gcloud logging read 'protoPayload.serviceName="iap.googleapis.com" AND protoPayload.authorizationInfo.permission="iap.resources.egressViaIAP"' --project="$GCP_PROJECT_ID" --freshness=1h
 ```
 
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Failed to convert project number to project ID` at start-up | Resource Manager hostname not allowed, or `roles/browser` missing | Both are in this sample; the first start-up of a new engine can still log it once, because the grants can only exist after the engine (its principal) does |
-| `Cannot connect to host <host>:443` / `503 ... 240.0.0.2:443` | Hostname not in `registry.tf` (exact match, standard **and** `.mtls.` variants), or no `iap.egressor` grant | Register the host and re-apply |
+| Every gateway entry is `CONNECT 240.0.0.2:443`, rule `default_denied`, no `authzPolicyInfo` | No IAP `REQUEST_AUTHZ` policy on the egress gateway: nothing evaluates the `iap.egressor` grants | `google_network_security_authz_policy.iap_egress` (`policies.tf`) |
+| `Cannot connect to host <host>:443` / `authzPolicyInfo.result` denied | Hostname not in `registry.tf` (exact match, standard **and** `.mtls.` variants), or no `iap.egressor` grant | Register the host and re-apply |
+| `404 Publisher model ... was not found` | Model not served by the `europe-west1` regional endpoint | Use a `gemini-2.5-*` model (`var.model`) |
 | `unregisteredResource` in the IAP audit log | Destination not registered in Agent Registry | Add it to `local.egress_endpoints` |
 
 ### Semantic governance wiring (optional)
@@ -172,6 +174,6 @@ samples/geap-agent-secured/
 ├── model_armor.tf        # templates + authz extension + CONTENT_AUTHZ policy
 ├── gateway.tf            # ingress and egress Agent Gateways
 ├── agent.tf  iam.tf      # Agent Runtime engine and least-privilege grants
-├── registry.tf  policies.tf  # egress allowlist, IAM agent policies, semantic governance
+├── registry.tf  policies.tf  # egress allowlist, IAP authz policy + iap.egressor grants, semantic governance
 └── Taskfile.yml
 ```

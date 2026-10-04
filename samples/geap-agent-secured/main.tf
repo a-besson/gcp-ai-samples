@@ -17,7 +17,7 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.7"
     }
-    # Waits for the Agent Registry to ingest the deployed agent / registered endpoints
+    # Waits for the Agent Registry to ingest the deployed agent and for new service agents
     time = {
       source  = "hashicorp/time"
       version = "~> 0.13"

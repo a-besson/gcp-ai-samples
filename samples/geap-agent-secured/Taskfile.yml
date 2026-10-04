@@ -65,7 +65,7 @@ tasks:
     cmds:
       - |
         REASONING_ENGINE_ID="$(terraform output -raw reasoning_engine_id | awk -F/ '{print $NF}')" \
-        .venv/bin/python scripts/invoke.py "{{.CLI_ARGS}}"
+        .venv/bin/python scripts/invoke.py {{.CLI_ARGS}}
 
   e2e:
     desc: "WARNING: billable end-to-end checks against the deployed agent (LLM calls)"

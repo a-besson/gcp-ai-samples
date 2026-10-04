@@ -37,10 +37,12 @@ No modules.
 | [google_iap_agent_registry_endpoint_iam_member.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_agent_registry_endpoint_iam_member) | resource |
 | [google_kms_crypto_key_iam_member.function_agents](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member) | resource |
 | [google_model_armor_template.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/model_armor_template) | resource |
+| [google_network_security_authz_policy.iap_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_security_authz_policy) | resource |
 | [google_network_security_authz_policy.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_security_authz_policy) | resource |
 | [google_network_services_agent_connectivity_template.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_connectivity_template) | resource |
 | [google_network_services_agent_gateway.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) | resource |
 | [google_network_services_agent_gateway.ingress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) | resource |
+| [google_network_services_authz_extension.iap_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_authz_extension) | resource |
 | [google_network_services_authz_extension.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_authz_extension) | resource |
 | [google_project_iam_audit_config.iap](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_audit_config) | resource |
 | [google_project_iam_member.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
@@ -56,10 +58,8 @@ No modules.
 | [google_vertex_ai_semantic_governance_policy_engine.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy_engine) | resource |
 | [time_sleep.agent_ingestion](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [time_sleep.function_agents](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
-| [time_sleep.registry_ingestion](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [archive_file.function_src](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
 | [google_agent_registry_agent.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/agent_registry_agent) | data source |
-| [google_agent_registry_endpoint.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/agent_registry_endpoint) | data source |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs
@@ -72,7 +72,7 @@ No modules.
 | <a name="input_function_source_dir"></a> [function\_source\_dir](#input\_function\_source\_dir) | Directory holding the Cloud Run function source (main.py, requirements.txt). | `string` | `"function_src"` | no |
 | <a name="input_max_instances"></a> [max\_instances](#input\_max\_instances) | Maximum instances, bounded to protect the budget. | `number` | `2` | no |
 | <a name="input_min_instances"></a> [min\_instances](#input\_min\_instances) | Minimum warm instances (0 = scale to zero, cheapest). | `number` | `0` | no |
-| <a name="input_model"></a> [model](#input\_model) | Gemini model name served by the regional europe-west1 endpoint. Check availability before changing it. | `string` | `"gemini-3.5-flash"` | no |
+| <a name="input_model"></a> [model](#input\_model) | Gemini model name served by the regional europe-west1 endpoint (gemini-2.5-*; gemini-3.x is not served there). Check availability before changing it. | `string` | `"gemini-2.5-flash"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | GCP project ID hosting the samples (from GCP\_PROJECT\_ID in .env). | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | Region of every resource and of the model endpoint. Locked to Belgium for data sovereignty. | `string` | `"europe-west1"` | no |
 | <a name="input_semantic_policy"></a> [semantic\_policy](#input\_semantic\_policy) | Natural-language constraint enforced by the semantic governance policy (only used when enable\_semantic\_governance is true). | `string` | `"The agent only writes plain-text reports under agent-workspace/ and only calls the backend function with a small JSON payload."` | no |

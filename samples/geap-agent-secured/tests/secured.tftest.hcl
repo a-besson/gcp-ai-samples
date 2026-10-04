@@ -194,6 +194,20 @@ run "every_egress_endpoint_is_registered_and_granted" {
   }
 }
 
+run "egress_gateway_delegates_authorization_to_iap" {
+  command = apply
+
+  assert {
+    condition     = google_network_security_authz_policy.iap_egress.policy_profile == "REQUEST_AUTHZ" && google_network_security_authz_policy.iap_egress.action == "CUSTOM" && google_network_security_authz_policy.iap_egress.target[0].resources == tolist([google_network_services_agent_gateway.egress.id])
+    error_message = "The egress gateway must delegate request authorization to IAP (REQUEST_AUTHZ / CUSTOM)."
+  }
+
+  assert {
+    condition     = google_network_services_authz_extension.iap_egress.service == "iap.googleapis.com" && !google_network_services_authz_extension.iap_egress.fail_open && google_network_services_authz_extension.iap_egress.metadata["iapPolicyVersion"] == "V1"
+    error_message = "The IAP extension must fail closed and evaluate the IAM Allow policy (V1) holding the iap.egressor grants."
+  }
+}
+
 run "egress_decisions_are_audited" {
   command = apply
 

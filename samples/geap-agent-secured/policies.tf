@@ -1,14 +1,51 @@
-# Agent Policy: IAM egress allowlist (always on) + semantic governance (optional, Preview).
+# Agent Policy: IAM egress allowlist enforced by IAP on the egress gateway (always on) + semantic
+# governance (optional, Preview).
 
-# IAM agent policy: the agent identity may only reach the registered endpoints
+# IAM agent policy: the agent identity may only reach the registered endpoints.
+# registry_resource is the endpoint created with the service (.../endpoints/<id>): reading it from the
+# resource keeps new grants "known after apply", unlike a registry lookup by display name at plan time.
 resource "google_iap_agent_registry_endpoint_iam_member" "egress" {
   for_each = local.egress_endpoints
 
   project     = var.project_id
   location    = var.region
-  endpoint_id = data.google_agent_registry_endpoint.egress[each.key].endpoint_id
+  endpoint_id = reverse(split("/", google_agent_registry_service.egress[each.key].registry_resource))[0]
   role        = "roles/iap.egressor"
   member      = local.agent_principal
+}
+
+# The grants above are only evaluated once IAP is the egress gateway's authorizer: without this
+# REQUEST_AUTHZ policy the gateway applies its built-in default_denied rule to every request.
+# V1 = IAM Allow policy (the roles/iap.egressor bindings); V2 (Unified Access Policy) would ignore them.
+resource "google_network_services_authz_extension" "iap_egress" {
+  name     = "agw-iap-egress"
+  location = var.region
+
+  service = "iap.googleapis.com"
+  timeout = "1s"
+  # Fail closed: if IAP cannot decide, the egress request is denied
+  fail_open = false
+
+  metadata = {
+    iapPolicyVersion = "V1"
+  }
+}
+
+resource "google_network_security_authz_policy" "iap_egress" {
+  name           = "agw-iap-egress"
+  location       = var.region
+  policy_profile = "REQUEST_AUTHZ"
+  action         = "CUSTOM"
+
+  target {
+    resources = [google_network_services_agent_gateway.egress.id]
+  }
+
+  custom_provider {
+    authz_extension {
+      resources = [google_network_services_authz_extension.iap_egress.id]
+    }
+  }
 }
 
 # Egress decisions (iap.resources.egressViaIAP) are Data Access audit logs, off by default: enable them

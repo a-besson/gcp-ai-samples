@@ -52,17 +52,3 @@ resource "google_agent_registry_service" "egress" {
     type = "NO_SPEC"
   }
 }
-
-# Registered services are ingested asynchronously into the registry catalogue
-resource "time_sleep" "registry_ingestion" {
-  depends_on      = [google_agent_registry_service.egress]
-  create_duration = "60s"
-}
-
-data "google_agent_registry_endpoint" "egress" {
-  for_each = local.egress_endpoints
-
-  location   = var.region
-  filter     = "displayName=\"${local.agent_name}-${each.key}\""
-  depends_on = [time_sleep.registry_ingestion]
-}
