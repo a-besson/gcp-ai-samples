@@ -1,5 +1,8 @@
-# Secured GEAP agent: Agent Runtime behind two Agent Gateways (Model Armor on ingress, default-deny
-# egress), attached to the Belgium VPC, scoped bucket access, Cloud Run function, sandboxed code.
+# Secured GEAP agent: built on the Cloud Foundation Fabric modules
+# (geap-agent-gateway, geap-agent-runtime, gcs, cloud-function-v2, iam-service-account).
+#
+# Every Fabric module is pinned to the same commit of the master branch (2026-10-09, see ADR 005): release
+# v59.0.0 sets dns_peering_config.domain, which the google 8.5 provider rejects (fixed by commit ccd4c1c95).
 terraform {
   required_version = "~> 1.16"
 
@@ -8,16 +11,17 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 8.5"
     }
-    # Only for google_project_service_identity (service agents)
+    # The Fabric GEAP modules create their resources with google-beta
     google-beta = {
       source  = "hashicorp/google-beta"
       version = "~> 8.5"
     }
+    # Zips the function source (cloud-function-v2 module)
     archive = {
       source  = "hashicorp/archive"
       version = "~> 2.7"
     }
-    # Waits for the Agent Registry to ingest the deployed agent and for new service agents
+    # Waits for IAM propagation (function build) and for the Agent Registry ingestion (semantic governance)
     time = {
       source  = "hashicorp/time"
       version = "~> 0.13"
@@ -45,7 +49,7 @@ provider "google-beta" {
   default_labels = local.labels
 }
 
-# Foundations (KMS key, VPC, registry, ...) owned by samples/base
+# Foundations (KMS key, VPC, registry, CMEK grants of the function service agents, ...) owned by samples/base
 data "terraform_remote_state" "base" {
   backend = "gcs"
 

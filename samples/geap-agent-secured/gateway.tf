@@ -1,65 +1,65 @@
-# Two Agent Gateways, one per governed access path (same project and region as the agent).
+# Two Agent Gateways, one per governed access path (same project and region as the agent), from the Fabric
+# geap-agent-gateway module. The module configures its own provider (networkservices v1alpha1 endpoint): the
+# provider default_labels do not reach its resources, so labels are passed explicitly, and the module cannot be
+# used with depends_on, count or for_each.
 
-# Ingress: clients -> agent. Model Armor screens prompts and answers (see model_armor.tf).
-resource "google_network_services_agent_gateway" "ingress" {
-  name        = "agw-${local.agent_name}-ingress"
-  location    = var.region
-  description = "Governs client-to-agent traffic"
+# Ingress: clients -> agent. Model Armor screens prompts and answers (templates in model_armor.tf).
+module "gateway_ingress" {
+  source = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/geap-agent-gateway?ref=25d8d9a0ca869fd15083a16183f61de1408524e3"
 
-  google_managed {
-    governed_access_path = "CLIENT_TO_AGENT"
+  project_id     = var.project_id
+  project_number = local.base.project_number
+  region         = var.region
+  name           = "agw-${local.agent_name}-ingress"
+  description    = "Governs client-to-agent traffic"
+  access_path    = "CLIENT_TO_AGENT"
+  labels         = local.labels
+  registries     = [local.registry]
+
+  # Content screening only, as in geap-agent-secured: no IAP request authorization on the way in
+  iap_config = null
+  # Fail closed (module default): if Model Armor is unreachable the request is denied rather than let through
+  model_armor_config = {
+    request_template_id  = google_model_armor_template.this["request"].id
+    response_template_id = google_model_armor_template.this["response"].id
   }
-
-  registries = [local.registry]
 }
 
-# Egress: agent -> anywhere. Default deny: only endpoints registered in Agent Registry and granted
-# roles/iap.egressor to the agent identity are reachable (see registry.tf).
-locals {
-  egress_network = {
-    network_attachment = google_compute_network_attachment.gateway_egress.id
-    # The backend function is internal-only: run.app resolves to the PSC endpoint for Google APIs of the
-    # VPC (private zone in samples/base), so the call enters Cloud Run from the VPC instead of the internet.
-    dns_domains = [local.base.run_app_private_dns_name]
-    dns_network = local.base.network_id
+# Egress: agent -> anywhere. Default deny: the module attaches IAP as the gateway authorizer (REQUEST_AUTHZ,
+# IAM allow policies V1, fail closed); only endpoints registered in Agent Registry (registry.tf) and granted
+# roles/iap.egressor to the agent identity are reachable.
+module "gateway_egress" {
+  source = "github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/geap-agent-gateway?ref=25d8d9a0ca869fd15083a16183f61de1408524e3"
+
+  project_id     = var.project_id
+  project_number = local.base.project_number
+  region         = var.region
+  name           = "agw-${local.agent_name}-egress"
+  description    = "Governs agent-to-anywhere traffic (default deny)"
+  access_path    = "AGENT_TO_ANYWHERE"
+  labels         = local.labels
+  registries     = [local.registry]
+
+  # The module manages the connectivity template. The internal-only function is reached through the VPC: run.app
+  # resolves to the PSC endpoint for Google APIs (private zone of samples/base), so the call enters Cloud Run from
+  # the VPC instead of the internet.
+  # NOTE: the API refuses to update a template referenced by a gateway, and the module does not replace it before
+  # destroying the old one: changing these settings needs the gateway detached first (see README).
+  # The attachment is passed through the module context: the module counts its template on the literal key, which
+  # is known at plan time, while the attachment id is only known after apply.
+  networking_config = {
+    psc_i_network_attachment_id = "$psc_network_attachments:egress"
+    labels                      = local.labels
+    dns_peering_config = {
+      domains        = [local.base.run_app_private_dns_name]
+      target_network = local.base.network_id
+    }
   }
-}
-
-# The API refuses to update a template referenced by a gateway: any change creates a new template (ID suffixed
-# by a hash of its network settings), switches the gateway to it, then deletes the previous one.
-resource "google_network_services_agent_connectivity_template" "egress" {
-  agent_connectivity_template_id = "act-${local.agent_name}-egress-${substr(sha256(jsonencode(local.egress_network)), 0, 8)}"
-  location                       = var.region
-  description                    = "Egress path of the agent gateway through the VPC"
-  access_path                    = "AGENT_TO_ANYWHERE"
-
-  egress_network_config {
-    network_attachment = local.egress_network.network_attachment
-
-    dns_peering_config {
-      domains        = local.egress_network.dns_domains
-      target_network = local.egress_network.dns_network
+  context = {
+    psc_network_attachments = {
+      egress = google_compute_network_attachment.gateway_egress.id
     }
   }
 
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [google_project_iam_member.agent_gateway_dns_peer]
-}
-
-resource "google_network_services_agent_gateway" "egress" {
-  name        = "agw-${local.agent_name}-egress"
-  location    = var.region
-  description = "Governs agent-to-anywhere traffic (default deny)"
-
-  google_managed {
-    governed_access_path = "AGENT_TO_ANYWHERE"
-  }
-
-  # The template is referenced by project NUMBER (not ID): a project ID is silently rejected
-  agent_connectivity_template = "projects/${local.base.project_number}/locations/${var.region}/agentConnectivityTemplates/${google_network_services_agent_connectivity_template.egress.agent_connectivity_template_id}"
-
-  registries = [local.registry]
+  # The roles/iap.egressor grants are in registry.tf: see the note there.
 }

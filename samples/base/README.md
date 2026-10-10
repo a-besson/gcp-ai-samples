@@ -37,7 +37,7 @@ graph TD
 | Egress | No NAT, no external IP | No internet path by design; Private Google Access for Google APIs |
 | Internal Cloud Run | PSC endpoint for Google APIs + private `run.app.` zone | `ALLOW_INTERNAL_ONLY` services only accept traffic entering from the VPC; Agent Gateways peer with the zone (`run_app_private_dns_name` output) |
 | Logs | Regional bucket + exclusion on `_Default` | Application logs stay in Belgium (`_Required` audit logs remain global) |
-| Service agents | Base grants GCS, Artifact Registry and Agent Platform agents on the key (30 s wait for IAM propagation); `extra_cmek_service_agents` adds more (e.g. the Agent Runtime agent); Cloud Run/Functions agents are granted by `geap-agent-secured` | One owner per key binding: samples never share an IAM binding |
+| Service agents | Base grants GCS, Artifact Registry, Agent Platform, Cloud Functions and Cloud Run agents on the key (30 s wait for IAM propagation); `extra_cmek_service_agents` adds more (e.g. the Agent Runtime agent) | One owner per key binding: samples never share an IAM binding (both secured samples deploy a function) |
 
 ## 🔒 Security Design
 

@@ -17,7 +17,7 @@ REQUIRED = ("GCP_PROJECT_ID", "REASONING_ENGINE_ID", "E2E_BUCKET")
 if any(not os.environ.get(name) for name in REQUIRED):  # pragma: no cover - depends on a deployment
     pytest.skip(f"set {', '.join(REQUIRED)} (done by `task e2e`)", allow_module_level=True)
 
-from scripts.invoke import query  # noqa: E402  (imported only once the deployment is known)
+from scripts.invoke import query, stream_parts  # noqa: E402  (imported only once the deployment is known)
 
 
 @pytest.fixture(scope="module")
@@ -47,8 +47,10 @@ def test_trigger_backend_function() -> None:
 
 
 def test_code_runs_in_the_sandbox() -> None:
-    answer = query("Compute the sum of the first 100 prime numbers with Python code and give the number.")
-    assert "24133" in answer
+    # Checks the sandbox output, not the answer text: the model may compute the sum itself or print "24,133"
+    parts = stream_parts("Compute the sum of the first 100 prime numbers with Python code and give the number.")
+    outputs = [part["code_execution_result"].get("output", "") for part in parts if "code_execution_result" in part]
+    assert any("24133" in output for output in outputs)
 
 
 def test_prompt_injection_is_blocked_by_model_armor() -> None:

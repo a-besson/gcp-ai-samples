@@ -1,4 +1,5 @@
-# Model Armor templates enforced by the ingress gateway (user prompt in, agent answer out).
+# Model Armor templates screened by the ingress gateway (user prompt in, agent answer out). Fabric has no module
+# for them: the geap-agent-gateway module takes their ids and creates the authz extension and CONTENT_AUTHZ policy.
 locals {
   model_armor_templates = {
     request  = "ma-${local.agent_name}-request"
@@ -48,41 +49,6 @@ resource "google_model_armor_template" "this" {
   template_metadata {
     multi_language_detection {
       enable_multi_language_detection = true
-    }
-  }
-}
-
-# Authz extension calling the regional Model Armor endpoint (data stays in europe-west1)
-resource "google_network_services_authz_extension" "model_armor" {
-  name     = "agw-model-armor"
-  location = var.region
-
-  service = "modelarmor.${var.region}.rep.googleapis.com"
-  timeout = "1s"
-  # Fail closed: if Model Armor is unreachable the request is denied rather than let through unscreened
-  fail_open = false
-
-  metadata = {
-    model_armor_settings = jsonencode([{
-      request_template_id  = google_model_armor_template.this["request"].id
-      response_template_id = google_model_armor_template.this["response"].id
-    }])
-  }
-}
-
-resource "google_network_security_authz_policy" "model_armor" {
-  name           = "agw-model-armor"
-  location       = var.region
-  policy_profile = "CONTENT_AUTHZ"
-  action         = "CUSTOM"
-
-  target {
-    resources = [google_network_services_agent_gateway.ingress.id]
-  }
-
-  custom_provider {
-    authz_extension {
-      resources = [google_network_services_authz_extension.model_armor.id]
     }
   }
 }

@@ -141,8 +141,8 @@ run "cmek_is_granted_to_the_service_agents" {
   }
 
   assert {
-    condition     = toset(keys(google_kms_crypto_key_iam_member.cmek_users)) == toset(["storage", "artifact_registry", "aiplatform", "extra_0"])
-    error_message = "The key must be granted to storage, Artifact Registry, Agent Platform and the extra agents."
+    condition     = toset(keys(google_kms_crypto_key_iam_member.cmek_users)) == toset(["storage", "artifact_registry", "aiplatform", "cloudfunctions", "run", "extra_0"])
+    error_message = "The key must be granted to storage, Artifact Registry, Agent Platform, Cloud Functions, Cloud Run and the extra agents."
   }
 
   assert {

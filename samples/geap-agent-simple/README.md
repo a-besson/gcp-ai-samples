@@ -2,7 +2,7 @@
 
 Terraform documentation: [TFDOCS.md](TFDOCS.md)
 
-The smallest GEAP sample: an ADK agent deployed on **Agent Runtime** that takes a simple question and sends it to a Gemini model. It shows the baseline used by [`geap-agent-secured`](../geap-agent-secured/README.md): Agent Identity, CMEK and the Belgium region.
+The smallest GEAP sample: an ADK agent deployed on **Agent Runtime** that takes a simple question and sends it to a Gemini model. It shows the baseline used by `geap-agent-secured` (see [its README](../geap-agent-secured/README.md)): Agent Identity, CMEK and the Belgium region.
 
 ## ✨ Features
 

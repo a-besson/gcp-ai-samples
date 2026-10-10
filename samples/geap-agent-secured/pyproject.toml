@@ -1,7 +1,7 @@
 [project]
 name = "geap-agent-secured"
 version = "0.1.0"
-description = "Secured ADK agent deployed on Gemini Enterprise Agent Platform Agent Runtime"
+description = "Secured ADK agent deployed on Gemini Enterprise Agent Platform Agent Runtime with the Cloud Foundation Fabric modules"
 requires-python = ">=3.13"
 
 [tool.ruff]

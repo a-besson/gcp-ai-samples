@@ -15,51 +15,33 @@
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_archive"></a> [archive](#provider\_archive) | 2.8.1 |
-| <a name="provider_google"></a> [google](#provider\_google) | 8.5.0 |
-| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 8.5.0 |
+| <a name="provider_google"></a> [google](#provider\_google) | 8.6.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 | <a name="provider_time"></a> [time](#provider\_time) | 0.14.2 |
 
 ## Modules
 
-No modules.
+| Name | Source | Version |
+| ---- | ------ | ------- |
+| <a name="module_agent"></a> [agent](#module\_agent) | github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/geap-agent-runtime | 25d8d9a0ca869fd15083a16183f61de1408524e3 |
+| <a name="module_bucket"></a> [bucket](#module\_bucket) | github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/gcs | 25d8d9a0ca869fd15083a16183f61de1408524e3 |
+| <a name="module_function"></a> [function](#module\_function) | github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-function-v2 | 25d8d9a0ca869fd15083a16183f61de1408524e3 |
+| <a name="module_function_build_sa"></a> [function\_build\_sa](#module\_function\_build\_sa) | github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/iam-service-account | 25d8d9a0ca869fd15083a16183f61de1408524e3 |
+| <a name="module_gateway_egress"></a> [gateway\_egress](#module\_gateway\_egress) | github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/geap-agent-gateway | 25d8d9a0ca869fd15083a16183f61de1408524e3 |
+| <a name="module_gateway_ingress"></a> [gateway\_ingress](#module\_gateway\_ingress) | github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/geap-agent-gateway | 25d8d9a0ca869fd15083a16183f61de1408524e3 |
 
 ## Resources
 
 | Name | Type |
 | ---- | ---- |
-| [google-beta_google_project_service_identity.function_agents](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/google_project_service_identity) | resource |
 | [google_agent_registry_service.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/agent_registry_service) | resource |
-| [google_cloud_run_v2_service_iam_member.agent_invokes_function](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
-| [google_cloudfunctions2_function.action](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloudfunctions2_function) | resource |
 | [google_compute_network_attachment.gateway_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network_attachment) | resource |
 | [google_iap_agent_registry_endpoint_iam_member.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_agent_registry_endpoint_iam_member) | resource |
-| [google_kms_crypto_key_iam_member.function_agents](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key_iam_member) | resource |
 | [google_model_armor_template.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/model_armor_template) | resource |
-| [google_network_security_authz_policy.iap_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_security_authz_policy) | resource |
-| [google_network_security_authz_policy.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_security_authz_policy) | resource |
-| [google_network_services_agent_connectivity_template.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_connectivity_template) | resource |
-| [google_network_services_agent_gateway.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) | resource |
-| [google_network_services_agent_gateway.ingress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) | resource |
-| [google_network_services_authz_extension.iap_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_authz_extension) | resource |
-| [google_network_services_authz_extension.model_armor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_authz_extension) | resource |
-| [google_project_iam_audit_config.iap](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_audit_config) | resource |
-| [google_project_iam_member.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
-| [google_project_iam_member.agent_gateway_dns_peer](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
-| [google_project_iam_member.function_build](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
-| [google_service_account.function_build](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
-| [google_service_account.function_runtime](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
-| [google_storage_bucket.data](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
-| [google_storage_bucket_object.function_src](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object) | resource |
-| [google_storage_managed_folder.workspace](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_managed_folder) | resource |
-| [google_storage_managed_folder_iam_member.workspace](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_managed_folder_iam_member) | resource |
-| [google_vertex_ai_reasoning_engine.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_reasoning_engine) | resource |
 | [google_vertex_ai_semantic_governance_policy.agent_scope](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy) | resource |
 | [google_vertex_ai_semantic_governance_policy_engine.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy_engine) | resource |
 | [time_sleep.agent_ingestion](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
-| [time_sleep.function_agents](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
-| [archive_file.function_src](https://registry.terraform.io/providers/hashicorp/archive/latest/docs/data-sources/file) | data source |
+| [time_sleep.function_build_iam](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [google_agent_registry_agent.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/agent_registry_agent) | data source |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
@@ -86,6 +68,7 @@ No modules.
 | ---- | ----------- |
 | <a name="output_agent_principal"></a> [agent\_principal](#output\_agent\_principal) | IAM principal of the agent (Agent Identity). |
 | <a name="output_bucket_name"></a> [bucket\_name](#output\_bucket\_name) | Data bucket; the agent only reaches the agent-workspace/ managed folder. |
+| <a name="output_connectivity_template_id"></a> [connectivity\_template\_id](#output\_connectivity\_template\_id) | Agent connectivity template of the egress gateway (project-number form). |
 | <a name="output_egress_allowlist"></a> [egress\_allowlist](#output\_egress\_allowlist) | Endpoints the agent identity is allowed to reach through the egress gateway. |
 | <a name="output_function_url"></a> [function\_url](#output\_function\_url) | Internal-only URL of the backend Cloud Run function. |
 | <a name="output_gateway_egress_id"></a> [gateway\_egress\_id](#output\_gateway\_egress\_id) | ID of the AGENT\_TO\_ANYWHERE Agent Gateway (default deny). |

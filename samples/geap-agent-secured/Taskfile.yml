@@ -1,4 +1,4 @@
-# Secured ADK agent: Agent Gateways, Model Armor, sandbox, VPC, scoped bucket access, Cloud Run function.
+# Secured ADK agent (Cloud Foundation Fabric modules): Agent Gateways, Model Armor, sandbox, VPC, scoped bucket access, Cloud Run function.
 version: "3"
 
 env:
@@ -41,21 +41,30 @@ tasks:
       - terraform init -reconfigure -input=false -backend-config="bucket=$TF_STATE_BUCKET"
 
   plan:
-    desc: Plan the secured stack
+    desc: Plan the secured stack (downloads the pinned Fabric modules at init)
     deps: [init, package]
     cmds:
       - terraform plan -input=false -out=secured.tfplan
 
   apply:
-    desc: "WARNING: provisions billable resources (2 Agent Gateways, Agent Runtime, Model Armor, function) - applies the saved plan"
+    desc: "WARNING: provisions billable resources (2 Agent Gateways, Agent Runtime, Model Armor, function, code sandbox) - applies the saved plan"
     deps: [plan]
     cmds:
       - terraform apply -input=false -auto-approve secured.tfplan
+      - task: sandbox
+
+  sandbox:
+    desc: "Create or renew the code-execution sandbox of the deployed agent (billed while it exists, 7-day TTL; idempotent)"
+    deps: [setup]
+    cmds:
+      - |
+        REASONING_ENGINE_ID="$(terraform output -raw reasoning_engine_id | awk -F/ '{print $NF}')" \
+        .venv/bin/python scripts/provision_sandbox.py
 
   destroy:
-    desc: "WARNING: deletes the secured stack, including the data bucket and its objects"
+    desc: "WARNING: deletes the secured stack, including the data bucket and its objects, the agent sessions and the code sandbox"
     deps: [init]
-    prompt: Destroy the secured stack (the data bucket content is deleted)?
+    prompt: Destroy the secured stack (the data bucket content, the sessions and the sandbox are deleted)?
     cmds:
       - terraform destroy -input=false -auto-approve
 
@@ -71,6 +80,7 @@ tasks:
     desc: "WARNING: billable end-to-end checks against the deployed agent (LLM calls)"
     deps: [setup]
     cmds:
+      - task: sandbox
       - |
         REASONING_ENGINE_ID="$(terraform output -raw reasoning_engine_id | awk -F/ '{print $NF}')" \
         E2E_BUCKET="$(terraform output -raw bucket_name)" \

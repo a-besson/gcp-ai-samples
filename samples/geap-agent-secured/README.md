@@ -1,158 +1,136 @@
-# 🛡️ geap-agent-secured — governed agent on Agent Runtime
+# 🛡️ geap-agent-secured — governed agent built on Cloud Foundation Fabric
 
 Terraform documentation: [TFDOCS.md](TFDOCS.md)
 
-An ADK agent on **Agent Runtime** that answers a simple question, reads and writes **one path** of a bucket, triggers a **Cloud Run function** and runs code in a **sandbox**. Every flow is governed: two **Agent Gateways**, **Model Armor** on the way in and out, **Agent Identity**, an **IAM egress allowlist** and a private attachment to the Belgium VPC.
+Secured agent built on the [Cloud Foundation Fabric](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric) modules: an ADK agent on **Agent Runtime** that answers a simple question, reads and writes **one path** of a bucket, triggers a **Cloud Run function** and runs code in a **sandbox**, behind two **Agent Gateways** (Model Armor on the way in, default-deny IAP allowlist on the way out), with **Agent Identity**, CMEK and a private attachment to the Belgium VPC.
 
 > [!WARNING]
-> This sample provisions billable resources (two Agent Gateways, Agent Runtime, Model Armor). Read the FinOps section, then run `task destroy` after a demo.
+> This sample provisions billable resources (two Agent Gateways, Agent Runtime, Model Armor, a code sandbox). Read the FinOps section, then run `task destroy` after a demo.
+
+> [!IMPORTANT]
+> A project gets **two Agent Gateways per region** (`RegionalAgentGateways` quota, limit 2 in `europe-west1`), and every Agent Runtime engine of a project and region must bind to the same gateways. A second secured sample therefore cannot be deployed next to this one.
 
 ## ✨ Features
 
 - Agent Identity, CMEK; every resource in `europe-west1`, model inference in an EU region (`europe-west3` by default, `model_location`).
 - Ingress gateway (`CLIENT_TO_AGENT`) with Model Armor screening prompts and answers.
-- Egress gateway (`AGENT_TO_ANYWHERE`), **default deny**: IAP is the gateway authorizer (`REQUEST_AUTHZ` policy); only endpoints registered in Agent Registry and granted `roles/iap.egressor` are reachable.
+- Egress gateway (`AGENT_TO_ANYWHERE`), **default deny**: IAP is the gateway authorizer; only endpoints registered in Agent Registry and granted `roles/iap.egressor` are reachable.
 - Bucket access restricted to the `agent-workspace/` managed folder.
-- Backend Cloud Run function (internal ingress, dedicated service accounts, no role), reached from the egress gateway through the VPC (DNS peering on `run.app.` → PSC endpoint for Google APIs of `samples/base`).
-- Sandboxed code execution (hermetic, no network) through `AgentEngineSandboxCodeExecutor`.
-- Agent reaches the Belgium VPC through the egress gateway (Private Service Connect attachment).
+- Backend Cloud Run function (internal ingress, dedicated service accounts), reached from the egress gateway through the VPC (DNS peering on `run.app.` → PSC endpoint for Google APIs of `samples/base`).
+- Sandboxed code execution through `AgentEngineSandboxCodeExecutor`, on a sandbox provisioned by `task sandbox`.
 - Optional semantic governance policy (Preview).
+
+## 🧱 Cloud Foundation Fabric modules
+
+Every module is pinned to commit [`25d8d9a`](https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/tree/25d8d9a0ca869fd15083a16183f61de1408524e3) of `master` (2026-10-09): release `v59.0.0` sets `dns_peering_config.domain`, which the `google` 8.5 provider rejects, and no tag contains the fix yet ([ADR 005](../../docs/adr/005-cloud-foundation-fabric-modules.md)).
+
+| Module | Resources | File |
+|---|---|---|
+| `geap-agent-gateway` ×2 | Agent Gateways, connectivity template (egress), IAP authz extension + `REQUEST_AUTHZ` policy (egress), Model Armor authz extension + `CONTENT_AUTHZ` policy (ingress) | `gateway.tf` |
+| `geap-agent-runtime` | Reasoning engine (source deployment, Agent Identity, CMEK, gateway binding, `deletion_policy = FORCE`), project roles of the agent identity | `agent.tf` |
+| `gcs` | Data bucket, `agent-workspace/` managed folder and its IAM | `storage.tf` |
+| `cloud-function-v2` | Function, runtime service account, source bundle, `run.invoker` binding | `function.tf` |
+| `iam-service-account` | Build service account and its Cloud Build role | `function.tf` |
+
+Raw resources remain where Fabric has no module, or cannot take the value at plan time: Agent Registry services and the per-endpoint `roles/iap.egressor` grants (`registry.tf`), Model Armor templates (`model_armor.tf`), the network attachment (`network.tf`), semantic governance (`policies.tf`).
 
 ## 🧭 Architecture
 
 ```mermaid
 graph TD
-    C[Client] -->|query| GI[Agent Gateway<br/>CLIENT_TO_AGENT]
+    C[Client] -->|query| GI[module gateway_ingress<br/>CLIENT_TO_AGENT]
     GI -->|prompt / answer| MA[Model Armor<br/>europe-west1]
-    GI --> RT[Agent Runtime<br/>Agent Identity + CMEK]
-    RT -->|egress| GE[Agent Gateway<br/>AGENT_TO_ANYWHERE<br/>default deny]
+    GI --> RT[module agent<br/>Agent Runtime, Agent Identity + CMEK]
+    RT -->|egress| GE[module gateway_egress<br/>AGENT_TO_ANYWHERE, IAP default deny]
     GE -->|PSC attachment| VPC[Belgium VPC]
     GE -->|iap.egressor| REG[(Agent Registry<br/>allowlist)]
     GE --> LLM[Gemini regional endpoint<br/>EU model_location]
-    GE --> GCS[(Bucket<br/>agent-workspace/ only)]
+    GE --> GCS[(module bucket<br/>agent-workspace/ only)]
     VPC --> PSC[PSC endpoint Google APIs<br/>run.app private zone]
-    PSC --> FN[Cloud Run function<br/>internal only]
+    PSC --> FN[module function<br/>internal only]
     RT --> SB[Code sandbox<br/>no network]
-```
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant G as Ingress gateway
-    participant M as Model Armor
-    participant A as Agent
-    participant E as Egress gateway
-    C->>G: question
-    G->>M: screen prompt
-    M-->>G: allow / deny
-    G->>A: question
-    A->>E: Gemini / GCS / function (agent identity)
-    E-->>A: allowed endpoints only
-    A-->>G: answer
-    G->>M: screen answer
-    G-->>C: answer
 ```
 
 ### Key Design Decisions
 
 | Decision | Choice | Why |
 |---|---|---|
-| Gateways | Two, one per governed access path | `CLIENT_TO_AGENT` and `AGENT_TO_ANYWHERE` are distinct modes ([ADR 004](../../docs/adr/004-dual-agent-gateway.md)) |
-| Model Armor | Enforced at the ingress gateway (authz extension + `CONTENT_AUTHZ` policy), fail closed | No guardrail code in the agent ([ADR 003](../../docs/adr/003-model-armor-at-gateway.md)) |
-| Bucket scope | Managed folder + `objectUser` | IAM conditions do not restrict object listing; agent identities cannot hold `legacyBucket*` roles |
-| Function trigger | HTTPS call with an ID token through the egress gateway, then the VPC: the connectivity template peers `run.app.` with the private zone of `samples/base` (PSC endpoint for Google APIs) | An `ALLOW_INTERNAL_ONLY` service answers `404 Page not found` to traffic that does not enter from the VPC; the gateway otherwise reaches `*.run.app` over the Google network |
-| Connectivity template | ID suffixed by a hash of its network settings, `create_before_destroy` | The API rejects any update of a referenced template (`cannot update agent connectivity template that is referenced by an agent gateway`): a change creates a new template, switches the gateway in place, then deletes the old one |
-| Model location | `model_location` (EU regions only, default `europe-west3`), passed to the model client only | `gemini-3.x` is not served in `europe-west1`; the `eu` multi-region has no mTLS host (Agent Identity uses mTLS); sessions and sandbox stay on the engine region (`ENGINE_LOCATION`) |
-| Sandbox | `AgentEngineSandboxCodeExecutor` on the agent's own engine | No Terraform cycle; disabled with a warning if the engine cannot be resolved |
-| VPC attachment | Through the egress gateway connectivity template | The API forbids a direct PSC interface on an engine that uses an Agent Gateway |
-| Egress policy | `google_agent_registry_service` + `google_iap_agent_registry_endpoint_iam_member`, evaluated by an IAP authz extension (`REQUEST_AUTHZ`, IAM Allow policy `V1`, fail closed) on the egress gateway | Everything is Terraform ([ADR 001](../../docs/adr/001-terraform-first-mechanism-matrix.md)); without the IAP policy the gateway denies every request (`default_denied`) |
-| Semantic governance | Opt-in flag, Preview | Billed per LLM evaluation; not default |
+| Terraform modules | Cloud Foundation Fabric, pinned by commit SHA | Second attempt at the secured sample on maintained GEAP modules ([ADR 005](../../docs/adr/005-cloud-foundation-fabric-modules.md)) |
+| Gateway providers | The `geap-agent-gateway` module configures its own provider (`networkservices` v1alpha1) | Module design: provider `default_labels` do not reach it (labels passed explicitly), no `depends_on`/`count`/`for_each` on it, and `mock_provider` does not reach it (offline tests use `override_module`) |
+| Network attachment | Passed through the module `context` (`$psc_network_attachments:egress`) | The module counts its connectivity template on `psc_i_network_attachment_id`: a literal context key is known at plan time, the attachment id is not |
+| Egress grants | Raw `google_iap_agent_registry_endpoint_iam_member`, one per endpoint | The module infers each binding type from which id is set; an endpoint id generated by Agent Registry leaves its `for_each` keys unknown at plan. Its whole-registry `registry_iam` would also open the endpoints registered by other samples |
+| Ingress authorization | `iap_config = null`, Model Armor only, fail closed | Same behaviour as `geap-agent-secured` ([ADR 003](../../docs/adr/003-model-armor-at-gateway.md)) |
+| Agent roles | `service_account_config.roles` of the runtime module, bound to the agent identity | Least privilege: the module default would add `storage.objectViewer` on every bucket of the project |
+| Engine deletion | `enable_deletion_protection = false` (`deletion_policy = FORCE`) | The API refuses to delete an engine with child resources (sessions, sandbox) unless `force=true` |
+| Sandbox | Pre-provisioned by `task sandbox`, found by display name before each run (`session.state["sandbox_name"]`) | Same code as `geap-agent-secured`, whose engine never completed a creation operation. On this engine the native creation completes in 5 to 6 s (2026-10-09), so the per-session fallback of the executor works too |
+| Shared IAM | CMEK grants of the Cloud Functions / Cloud Run service agents owned by `samples/base`; IAP Data Access audit logs not repeated here | Two stacks binding the same member would remove it from each other on destroy |
 
 ## 🔒 Security Design
 
 | Control | Implementation |
 |---|---|
 | Identity | `AGENT_IDENTITY`, no service account, no key |
-| Least privilege | Project roles: `aiplatform.user`, `logging.logWriter`. Bucket: `objectUser` on the managed folder only. Function: `run.invoker` on that function only |
+| Least privilege | Agent project roles: `aiplatform.user`, `browser`, `agentregistry.viewer`, `logging.logWriter`, `monitoring.metricWriter`, `cloudtrace.agent`. Bucket: `objectUser` on the managed folder only. Function: `run.invoker` on that function only; function runtime account without role |
 | Prompt / answer screening | Model Armor (prompt injection, jailbreak, malicious URL, RAI, SDP) at the ingress gateway |
 | Egress | Default deny; IAP authorizes each request against the explicit allowlist in `registry.tf` (exact hostnames, standard and mTLS) |
-| Data at rest | One CMEK key (bucket, function, agent) |
-| Network | VPC access through the egress gateway PSC attachment (/28 subnet); function `ALLOW_INTERNAL_ONLY`, reached through the PSC endpoint for Google APIs; no NAT, no public IP |
-| Sovereignty | `region` validated to `europe-west1` for every resource; `model_location` validated to EU member-state regions (Terraform and `config.py`); regional endpoints only, never `global` |
-| Defence in depth | Tool-level path scoping on top of IAM; payload and file size limits |
-
-> [!IMPORTANT]
-> Preview surfaces (Agent Gateway, Agent Registry, semantic governance) and a few runtime behaviours could only be verified at deployment time. See "To validate at first apply" below.
+| Data at rest | One CMEK key (bucket, function, agent) from `samples/base` |
+| Network | VPC access through the egress gateway PSC attachment (`/28` subnet of `samples/base`, shared with other attachments); function `ALLOW_INTERNAL_ONLY`, reached through the PSC endpoint for Google APIs; no NAT, no public IP |
+| Sovereignty | `region` validated to `europe-west1`; `model_location` validated to EU member-state regions (Terraform and `config.py`) |
+| Supply chain | Fabric modules sourced from GitHub, pinned to an immutable commit SHA |
 
 ## 💰 FinOps
 
 | Item | Estimate | Cheaper option |
 |---|---|---|
-| Agent Gateways ×2 | Not published in the sources used for this sample — check the pricing page before applying | One gateway only drops either governed ingress or governed egress |
+| Agent Gateways ×2 | Not published in the sources used for this sample — check the pricing page before applying | Deploy only one of the secured samples (the quota allows a single pair per region anyway) |
 | Agent Runtime | vCPU/GiB-hours while an instance is up | `min_instances = 0` |
 | Model Armor | Free monthly allotment, then per volume | Keep templates as is |
 | Cloud Run function, GCS, KMS | Cents for a demo | — |
-| PSC endpoint for Google APIs + private DNS zone | Owned by `samples/base`: hourly charge per PSC endpoint + data processed, monthly fee per zone — check the pricing pages | Needed only for the internal-only function |
-| Semantic governance | LLM call per evaluation | Off by default |
+| Code sandbox | Billed while it exists (one sandbox, 7-day TTL) | `task destroy` deletes it with the engine |
 
 > [!TIP]
 > Destroy the stack after each session: the gateways are the fixed cost of this sample.
 
 ## 📋 Prerequisites
 
-`task setup` at the root, `gcloud auth application-default login`, `task bootstrap`, `task base:apply` (the CMEK key, the VPC and the Docker repository come from `samples/base`).
+`task setup` at the root, `gcloud auth application-default login`, `task bootstrap`, `task base:apply` (CMEK key and its grants, VPC, PSC endpoint for Google APIs, Docker repository). `terraform init` downloads the Fabric modules from github.com.
 
 ## 🚀 Deployment
 
 ```bash
 task setup      # venv + pinned dependencies
-task test       # offline Python + Terraform tests (no credentials)
+task test       # offline Python + Terraform tests (no credentials, gateway modules overridden)
 task plan       # packages the agent, then terraform plan
-task apply      # billable, no confirmation prompt
+task apply      # billable, no confirmation prompt; then creates the code sandbox
 task invoke -- "Write 'hello' in agent-workspace/hello.txt then read it back"
 task e2e        # optional end-to-end checks against the deployed agent (billable)
 ```
 
-### To validate at first apply
+### Validation at deployment (2026-10-09 / 2026-10-10)
 
-| Point | What to check |
+| Point | Result |
 |---|---|
-| CMEK on the agent engine | The Agent Runtime service agent can use the key (granted in `samples/base`); if the apply fails on the key, re-run once the service agent exists |
-| Egress registry model | Each registered service of type endpoint creates its registry endpoint synchronously (confirmed at first apply): its name is the service `registry_resource` attribute, used directly as the `roles/iap.egressor` target |
-| Function call from the agent | Confirmed on 2026-10-04 through the VPC path (DNS peering on `run.app.` → PSC endpoint for Google APIs): Cloud Run logs `POST 200`. Without it, Cloud Run answers `404 Page not found` (traffic from outside the VPC) |
-| Sandbox | **Open (2026-10-04)**: the executor creates one sandbox per session. On this gateway-bound engine, creation took 3 to 9 min without DNS peering and failed with `UNAVAILABLE` (twice) with it, against 3 to 5 s on the `geap-agent-simple` engine (no gateway). A code-execution query therefore exceeds the 180 s client timeout, and while the executor polls the creation it blocks the instance. See `docs/VERIFICATION.md` |
-| VPC attachment | The API rejects `psc_interface_config` together with `agent_gateway_config` (confirmed at first apply): the VPC is reached through the egress gateway attachment only |
-| Model availability | Confirmed on 2026-10-04: `gemini-3.5-flash` is served by `europe-west3` (and the `eu` multi-region, excluded: no mTLS host), not by `europe-west1`, which serves `gemini-2.5-*` only |
+| Coexistence with `geap-agent-secured` | **Refused**: `Error 429: Quota limit 'RegionalAgentGateways' has been exceeded. Limit: 2 in region europe-west1`. `geap-agent-secured` was destroyed first |
+| Function build | First apply failed with `Access to bucket gcf-v2-sources-... denied` (Cloud Build role of the build account not propagated yet): fixed by a 60 s `time_sleep` |
+| Gateways, engine, function, registry | Applied: 67 resources; the egress gateway takes ~4 min to create |
+| **Native sandbox creation** | **6/6 OK in 5 to 6 s** on two successive gateway-bound engines of this sample (`CreateSandboxEnvironment` operation completes): the creation never completes on the `geap-agent-secured` engine. Details in [`docs/VERIFICATION.md`](../../docs/VERIFICATION.md) |
+| End-to-end | `task e2e`: **6/6 in 43 s** (simple question, workspace write, refused write outside the workspace, function, sandboxed code, Model Armor block) |
 
-### Troubleshooting egress (Agent Gateway)
+## ⚠️ Known limitations
 
-The egress gateway denies everything that is not registered **and** granted `roles/iap.egressor` to the agent identity; a denial shows up as `403 Egress request is not authorized` or as connection errors in the agent logs. The IAP decision of each request is in the gateway log (`jsonPayload.authzPolicyInfo.result`, with the real URL in `httpRequest.requestUrl`).
+| Limitation | Workaround |
+|---|---|
+| The API refuses to update or delete a connectivity template referenced by a gateway, and the module neither suffixes the template id nor creates the new template before destroying the old one | Changing `networking_config` of the egress gateway needs two applies: point the gateway to a new template (`networking_config.name`), then let Terraform delete the old one |
+| `RegionalAgentGateways` quota: 2 per region | One secured sample per project and region |
+| Gateway module providers are not mocked by `terraform test` | `override_module` in `tests/secured.tftest.hcl`; gateway internals are covered by the Fabric test suite |
+| On an in-place update of the engine, the `google-beta` provider drops a `client_to_agent_config` whose gateway id is only known after apply: the binding silently stays out of the plan | `agent.tf` builds the ingress gateway id from its name, known at plan |
+| Removing a gateway from the configuration while the engine stays: Terraform deletes the gateway before updating the engine, the API refuses (`already being used by ... reasoningEngines/...`) and the provider retries for ~30 min | Unbind first (`terraform apply -target=module.agent`), then remove the gateway |
+| `task destroy` stops on the function: Cloud Functions deletes the image package, refused by the `immutable_tags` repository of `samples/base` (`cannot delete package ... tag immutability`) | Lift immutability for the deletion (`gcloud artifacts repositories update ar-gcp-samples --location=europe-west1 --no-immutable-tags`), destroy, then restore it with `task base:apply`. If the function is left half-deleted, its empty URL breaks the plan of `registry.tf`: finish with a targeted destroy |
 
-```bash
-# Agent runtime logs (build, start-up, requests)
-gcloud logging read 'resource.type="aiplatform.googleapis.com/ReasoningEngine" AND severity>=WARNING' --project="$GCP_PROJECT_ID" --freshness=1h
+> [!TIP]
+> Probing the agent with `curl` from zsh: write `${ENGINE_ID}:streamQuery`, with braces. Without them, zsh reads `:s` as a substitution modifier, drops the method from the URL and the API front end answers an HTML `404` (`server: ESF`) without the request ever reaching the agent. `task invoke` and `task e2e` (Python) are not affected.
 
-# Gateway decisions (stored in the europe-west1 log bucket of samples/base)
-gcloud logging read 'logName:"gateway_requests"' --project="$GCP_PROJECT_ID" --bucket=logs-gcp-samples-ew1 --location=europe-west1 --view=_AllLogs --freshness=1h
-
-# IAP egress authorization (Data Access audit logs, enabled by this sample; no entry observed on 2026-10-04, the gateway log above carries the decision)
-gcloud logging read 'protoPayload.serviceName="iap.googleapis.com" AND protoPayload.authorizationInfo.permission="iap.resources.egressViaIAP"' --project="$GCP_PROJECT_ID" --freshness=1h
-```
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `Failed to convert project number to project ID` at start-up | Resource Manager hostname not allowed, or `roles/browser` missing | Both are in this sample; the first start-up of a new engine can still log it once, because the grants can only exist after the engine (its principal) does |
-| Every gateway entry is `CONNECT 240.0.0.2:443`, rule `default_denied`, no `authzPolicyInfo` | No IAP `REQUEST_AUTHZ` policy on the egress gateway: nothing evaluates the `iap.egressor` grants | `google_network_security_authz_policy.iap_egress` (`policies.tf`) |
-| `Cannot connect to host <host>:443` / `authzPolicyInfo.result` denied | Hostname not in `registry.tf` (exact match, standard **and** `.mtls.` variants), or no `iap.egressor` grant | Register the host and re-apply |
-| `404 Publisher model ... was not found` | Model not served by the regional endpoint of `model_location` | Pick an EU region that serves it (`europe-west3` for `gemini-3.5-flash`) or a `gemini-2.5-*` model in `europe-west1` |
-| `403 Egress request is not authorized` right after adding a host | New `iap.egressor` grant not propagated yet | Retry after ~2 min |
-| Function call returns `404 Page not found` | The gateway reaches `*.run.app` outside the VPC, refused by the `ALLOW_INTERNAL_ONLY` ingress | DNS peering on `run.app.` (`gateway.tf`) + PSC endpoint and private zone (`samples/base`) |
-| `cannot update agent connectivity template that is referenced by an agent gateway` | Templates are immutable while referenced | Handled by the hashed template ID + `create_before_destroy` (`gateway.tf`) |
-| `unregisteredResource` in the IAP audit log | Destination not registered in Agent Registry | Add it to `local.egress_endpoints` |
-
-### Semantic governance wiring (optional)
-
-`enable_semantic_governance = true` creates the policy engine and an agent-scope policy. Attaching the engine to the egress gateway needs the engine DNS hostname, which the provider does not expose: create the authz extension and the authz policy as described in the [semantic governance guide](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/policies/configure-semantic-governance) (policy on `:generateContent` and `:streamGenerateContent` only, start in `DRY_RUN`). It cannot be combined with Model Armor on the ingress gateway, hence the egress attachment.
+For egress troubleshooting (gateway logs, IAP decisions, symptoms and fixes), see the troubleshooting section of the first, raw-resources version of this sample (removed; `git show 8cc113d:samples/geap-agent-secured/README.md`). Gateway names are `agw-geap-agent-secured-*`.
 
 ## 🧰 Task Commands
 
@@ -162,6 +140,7 @@ gcloud logging read 'protoPayload.serviceName="iap.googleapis.com" AND protoPayl
 | `task package` | Build the deterministic agent archive |
 | `task plan` / `task apply` / `task destroy` | Terraform lifecycle (`destroy` asks for confirmation) |
 | `task invoke -- "<question>"` | Query the deployed agent |
+| `task sandbox` | Create or renew the code sandbox (idempotent, run by `apply` and `e2e`) |
 | `task e2e` | Billable end-to-end checks (excluded from CI) |
 | `task test` | Offline Python and Terraform tests |
 | `task lint` | ruff and pyright |
@@ -170,17 +149,18 @@ gcloud logging read 'protoPayload.serviceName="iap.googleapis.com" AND protoPayl
 
 ```text
 samples/geap-agent-secured/
-├── app/                  # archive root: agent.py, tools.py, config.py, logger.py, requirements.txt
+├── app/                  # archive root: agent.py, tools.py, sandbox.py, config.py, logger.py, requirements.txt
 ├── function_src/         # Cloud Run function (main.py, requirements.txt)
-├── scripts/              # package.py, invoke.py
+├── scripts/              # package.py, invoke.py, provision_sandbox.py
 ├── tests/                # pytest, secured.tftest.hcl, fixtures/, e2e/ (excluded from CI)
 ├── main.tf  backend.tf  variables.tf  outputs.tf
-├── storage.tf            # bucket + agent-workspace/ managed folder
-├── function.tf           # Cloud Run function + dedicated service accounts
-├── network.tf            # PSC network attachments
-├── model_armor.tf        # templates + authz extension + CONTENT_AUTHZ policy
-├── gateway.tf            # ingress and egress Agent Gateways
-├── agent.tf  iam.tf      # Agent Runtime engine and least-privilege grants
-├── registry.tf  policies.tf  # egress allowlist, IAP authz policy + iap.egressor grants, semantic governance
+├── storage.tf            # module gcs: bucket + agent-workspace/ managed folder
+├── function.tf           # modules cloud-function-v2 + iam-service-account
+├── network.tf            # PSC network attachment of the egress gateway
+├── model_armor.tf        # Model Armor templates
+├── gateway.tf            # modules geap-agent-gateway (ingress, egress)
+├── agent.tf              # module geap-agent-runtime
+├── registry.tf           # egress allowlist + per-endpoint iap.egressor grants
+├── policies.tf           # semantic governance (optional)
 └── Taskfile.yml
 ```

@@ -23,7 +23,7 @@ task --list
 |---|---|---|
 | `base` | Shared foundations: single KMS key, Belgium VPC, logging | [samples/base](samples/base/README.md) |
 | `geap-agent-simple` | ADK agent on Agent Runtime answering a question through an LLM | [samples/geap-agent-simple](samples/geap-agent-simple/README.md) |
-| `geap-agent-secured` | Agent behind Agent Gateways with Model Armor, sandboxed code execution, scoped bucket access and Cloud Run function | [samples/geap-agent-secured](samples/geap-agent-secured/README.md) |
+| `geap-agent-secured` | Same agent built on the Cloud Foundation Fabric modules (`geap-agent-gateway`, `geap-agent-runtime`, ...); one secured sample per project and region (gateway quota) | [samples/geap-agent-secured](samples/geap-agent-secured/README.md) |
 
 ## 🧰 Task Commands
 
@@ -54,7 +54,7 @@ task --list
 ├── samples/
 │   ├── base/
 │   ├── geap-agent-simple/
-│   └── geap-agent-secured/
+│   └── geap-agent-secured/   # same agent on Cloud Foundation Fabric modules
 ├── PLAN.md              # execution plan
 ├── Taskfile.yml
 └── .pre-commit-config.yaml

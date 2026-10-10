@@ -20,7 +20,8 @@ locals {
 }
 
 # Service agents of the services encrypting data with the key. They are owned here, with the key,
-# so that the samples never share an IAM binding. Function/Run agents are owned by geap-agent-secured.
+# so that the samples never share an IAM binding: Cloud Functions and Cloud Run are used by both
+# geap-agent-secured.
 data "google_storage_project_service_account" "gcs" {
   project    = var.project_id
   depends_on = [google_project_service.apis]
@@ -44,6 +45,17 @@ resource "google_project_service_identity" "aiplatform" {
   depends_on = [google_project_service.apis]
 }
 
+# Cloud Functions (gcf-admin-robot) and Cloud Run (serverless-robot-prod) agents encrypt the CMEK functions
+resource "google_project_service_identity" "functions" {
+  provider = google-beta
+  for_each = toset(["cloudfunctions.googleapis.com", "run.googleapis.com"])
+
+  project = var.project_id
+  service = each.value
+
+  depends_on = [google_project_service.apis]
+}
+
 # A freshly created service agent is not immediately known to IAM ("Service account ... does not
 # exist"): wait before binding it to the key.
 resource "time_sleep" "service_agents" {
@@ -53,6 +65,7 @@ resource "time_sleep" "service_agents" {
     data.google_storage_project_service_account.gcs,
     google_project_service_identity.artifact_registry,
     google_project_service_identity.aiplatform,
+    google_project_service_identity.functions,
   ]
 }
 
@@ -62,6 +75,8 @@ locals {
       storage           = data.google_storage_project_service_account.gcs.email_address
       artifact_registry = google_project_service_identity.artifact_registry.email
       aiplatform        = google_project_service_identity.aiplatform.email
+      cloudfunctions    = google_project_service_identity.functions["cloudfunctions.googleapis.com"].email
+      run               = google_project_service_identity.functions["run.googleapis.com"].email
     },
     { for index, email in var.extra_cmek_service_agents : "extra_${index}" => email },
   )
