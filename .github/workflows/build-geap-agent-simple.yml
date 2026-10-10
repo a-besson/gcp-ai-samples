@@ -1,0 +1,32 @@
+name: build-geap-agent-simple
+
+on:
+  push:
+    paths:
+      - "samples/geap-agent-simple/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-geap-agent-simple.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+  pull_request:
+    paths:
+      - "samples/geap-agent-simple/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-geap-agent-simple.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+
+concurrency:
+  group: build-geap-agent-simple-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-sample.yml
+    with:
+      sample: geap-agent-simple

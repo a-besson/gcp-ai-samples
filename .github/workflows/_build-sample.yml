@@ -1,6 +1,6 @@
-# Reusable pipeline for one sample: fmt, validate, tflint, offline terraform tests, Python tests.
+# Reusable build for one sample: lint, syntax check and offline tests (Terraform and Python).
 # No cloud credentials: everything runs offline (mock providers, mocked LLM calls).
-name: sample
+name: build-sample
 
 on:
   workflow_call:
@@ -35,19 +35,19 @@ jobs:
           restore-keys: tf-plugins-${{ inputs.sample }}-
       - name: Prepare plugin cache
         run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
-      - name: terraform fmt
+      - name: Lint - terraform fmt
         run: terraform fmt -check -recursive
-      - name: terraform init (no backend)
+      - name: Syntax - terraform init (no backend)
         run: terraform init -backend=false -input=false
-      - name: terraform validate
+      - name: Syntax - terraform validate
         run: terraform validate
-      - name: tflint
+      - name: Lint - tflint
         run: |
           tflint --init --config="$GITHUB_WORKSPACE/.tflint.hcl"
           tflint --config="$GITHUB_WORKSPACE/.tflint.hcl"
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - name: terraform test (offline)
+      - name: Tests - terraform test (offline)
         run: terraform test
 
   python:
@@ -67,11 +67,11 @@ jobs:
         run: |
           uv venv
           uv pip install -r requirements-dev.txt
-      - name: ruff
+      - name: Lint - ruff
         run: |
           .venv/bin/ruff check .
           .venv/bin/ruff format --check .
-      - name: pyright
+      - name: Syntax - pyright
         run: .venv/bin/pyright
-      - name: pytest (offline, dummy credentials)
+      - name: Tests - pytest (offline, dummy credentials)
         run: .venv/bin/python -m pytest -m "not e2e"

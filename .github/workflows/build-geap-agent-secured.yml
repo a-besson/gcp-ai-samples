@@ -1,0 +1,32 @@
+name: build-geap-agent-secured
+
+on:
+  push:
+    paths:
+      - "samples/geap-agent-secured/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-geap-agent-secured.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+  pull_request:
+    paths:
+      - "samples/geap-agent-secured/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-geap-agent-secured.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+
+concurrency:
+  group: build-geap-agent-secured-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-sample.yml
+    with:
+      sample: geap-agent-secured

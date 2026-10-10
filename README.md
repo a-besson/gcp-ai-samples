@@ -43,19 +43,18 @@ task --list
 - Model inference on regional endpoints of EU member-state regions only (`model_location`, `europe-west3` by default: `gemini-3.5-flash` is not served in `europe-west1`).
 - Agent Identity (no service-account keys), least-privilege IAM bound to the agent principal.
 - Private networking: no public IP, no NAT, Private Google Access.
-- CI limited to lint, tests, `terraform validate` and KICS/Trivy scans; GitHub Actions pinned by SHA.
+- CI without cloud credentials: `build-<sample>` (lint, syntax check, offline tests), `check-quality` (pre-commit) and `check-cyber` (KICS, Trivy); `plan`/`apply` stay local; GitHub Actions pinned by SHA.
 
 ## 🗂️ Project tree
 
 ```text
 .
-├── .github/workflows/   # per-sample CI (path-filtered) + repo-wide gates
+├── .github/workflows/   # build-<sample> (path-filtered, reusable _build-sample.yml), check-quality, check-cyber
 ├── docs/                # VERIFICATION.md (Phase 0 evidence), adr/
 ├── samples/
 │   ├── base/
 │   ├── geap-agent-simple/
 │   └── geap-agent-secured/   # same agent on Cloud Foundation Fabric modules
-├── PLAN.md              # execution plan
 ├── Taskfile.yml
 └── .pre-commit-config.yaml
 ```

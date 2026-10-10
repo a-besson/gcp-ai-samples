@@ -2,6 +2,7 @@
 
 ## [2026-10-10] - Daily Log - geap-agent-secured-v2: client 404 traced to a zsh probe artifact, e2e 6/6
 
+- **ci**: workflows renamed by responsibility — `ci-<sample>` → `build-<sample>` (reusable `_sample.yml` → `_build-sample.yml`, steps labelled Lint/Syntax/Tests, per-ref `concurrency`), `ci-repo` → `check-cyber` (KICS + Trivy only); the `pre-commit` job moves unchanged to the new `check-quality`; no Java/Maven (none in repo), `terraform plan` stays out of CI (no cloud credentials)
 - **agents**: `AGENTS.md` is now the only instruction file (`AGENT.md` renamed, `CLAUDE.md` and `GEMINI.md` removed, GEMINI formatting rules merged); `.task/` (Task checksum cache) untracked and gitignored
 - **geap-agent-secured**: destroyed and rebuilt without the `-v2` suffix (state prefix, gateways, bucket, function, service accounts, agent, sandbox name, labels, test file); function husk left by a failed delete removed with the Artifact Registry tag immutability lifted then restored; e2e fresh-engine session creation fails for ~1 min after apply (propagation), then succeeds
 - **geap-agent-secured**: renamed from `geap-agent-secured-v2` (folder, CI workflow, Task namespace `secured:`, docs); deployed identifiers (state prefix, gateway/bucket/agent names, labels) intentionally keep the `-v2` suffix to avoid replacing live resources
