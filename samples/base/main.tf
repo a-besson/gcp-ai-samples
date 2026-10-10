@@ -5,7 +5,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 8.5"
+      version = "8.5.0"
     }
     # Waits for new service agents to be visible to IAM
     time = {
@@ -15,7 +15,7 @@ terraform {
     # Only for google_project_service_identity (service agents)
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 8.5"
+      version = "8.5.0"
     }
   }
 }

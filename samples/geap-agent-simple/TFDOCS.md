@@ -6,7 +6,7 @@
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.16 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 8.5 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | 8.5.0 |
 
 ## Providers
 
@@ -23,8 +23,8 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
-| [google_project_iam_member.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
-| [google_vertex_ai_reasoning_engine.agent](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_reasoning_engine) | resource |
+| [google_project_iam_member.agent](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/project_iam_member) | resource |
+| [google_vertex_ai_reasoning_engine.agent](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/vertex_ai_reasoning_engine) | resource |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs

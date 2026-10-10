@@ -9,12 +9,12 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 8.5"
+      version = "8.5.0"
     }
     # The Fabric GEAP modules create their resources with google-beta
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 8.5"
+      version = "8.5.0"
     }
     # Zips the function source (cloud-function-v2 module)
     archive = {

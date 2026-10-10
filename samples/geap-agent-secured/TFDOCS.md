@@ -7,15 +7,15 @@
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.16 |
 | <a name="requirement_archive"></a> [archive](#requirement\_archive) | ~> 2.7 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 8.5 |
-| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 8.5 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | 8.5.0 |
+| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | 8.5.0 |
 | <a name="requirement_time"></a> [time](#requirement\_time) | ~> 0.13 |
 
 ## Providers
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 8.6.0 |
+| <a name="provider_google"></a> [google](#provider\_google) | 8.5.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 | <a name="provider_time"></a> [time](#provider\_time) | 0.14.2 |
 
@@ -34,15 +34,15 @@
 
 | Name | Type |
 | ---- | ---- |
-| [google_agent_registry_service.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/agent_registry_service) | resource |
-| [google_compute_network_attachment.gateway_egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network_attachment) | resource |
-| [google_iap_agent_registry_endpoint_iam_member.egress](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_agent_registry_endpoint_iam_member) | resource |
-| [google_model_armor_template.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/model_armor_template) | resource |
-| [google_vertex_ai_semantic_governance_policy.agent_scope](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy) | resource |
-| [google_vertex_ai_semantic_governance_policy_engine.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vertex_ai_semantic_governance_policy_engine) | resource |
+| [google_agent_registry_service.egress](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/agent_registry_service) | resource |
+| [google_compute_network_attachment.gateway_egress](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/compute_network_attachment) | resource |
+| [google_iap_agent_registry_endpoint_iam_member.egress](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/iap_agent_registry_endpoint_iam_member) | resource |
+| [google_model_armor_template.this](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/model_armor_template) | resource |
+| [google_vertex_ai_semantic_governance_policy.agent_scope](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/vertex_ai_semantic_governance_policy) | resource |
+| [google_vertex_ai_semantic_governance_policy_engine.this](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/resources/vertex_ai_semantic_governance_policy_engine) | resource |
 | [time_sleep.agent_ingestion](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [time_sleep.function_build_iam](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
-| [google_agent_registry_agent.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/agent_registry_agent) | data source |
+| [google_agent_registry_agent.this](https://registry.terraform.io/providers/hashicorp/google/8.5.0/docs/data-sources/agent_registry_agent) | data source |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs
