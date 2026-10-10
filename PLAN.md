@@ -17,7 +17,7 @@
 
 1. **Une phase = une session = un commit** (Conventional Commit). Ne pas
    enchaîner deux phases sans que l'utilisateur ait validé la précédente.
-2. Avant chaque phase : relire `AGENT.md`, les rules globales
+2. Avant chaque phase : relire `AGENTS.md`, les rules globales
    (`~/.claude/rules/*.md`), la section **§3 Conventions** de ce plan, et
    `docs/VERIFICATION.md` (produit en Phase 0).
 3. **Ne jamais inventer** un nom de ressource, un argument Terraform, un flag

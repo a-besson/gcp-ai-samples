@@ -26,6 +26,14 @@ This file documents only what is specific to `gcp-samples` on top of the global 
 
 ---
 
+## Formatting
+
+- Use GitHub-style alerts (`> [!IMPORTANT]`, `> [!WARNING]`) for critical information.
+- Use tables for structured data.
+- Use emojis in section headings for readability (e.g., `## 🧰 Tech Stack`).
+
+---
+
 ## Key Commands
 
 ```bash
@@ -90,7 +98,7 @@ One entry per day. Group everything under a single heading.
 ## Standard Workflow
 
 ```
-1. INIT     → Global rules/skills apply automatically; read this AGENT.md for project specifics
+1. INIT     → Global rules/skills apply automatically; read this AGENTS.md for project specifics
 2. BUILD    → Apply changes respecting existing patterns
 3. VERIFY   → pre-commit run --all-files (fix all issues)
 4. DOCUMENT → Update README.md, TFDOCS.md
