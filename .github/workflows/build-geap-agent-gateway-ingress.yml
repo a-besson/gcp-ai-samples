@@ -1,0 +1,32 @@
+name: build-geap-agent-gateway-ingress
+
+on:
+  push:
+    paths:
+      - "samples/geap-agent-gateway-ingress/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-geap-agent-gateway-ingress.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+  pull_request:
+    paths:
+      - "samples/geap-agent-gateway-ingress/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-geap-agent-gateway-ingress.yml"
+      - ".tflint.hcl"
+      - ".pre-commit-config.yaml"
+      - "Taskfile.yml"
+
+concurrency:
+  group: build-geap-agent-gateway-ingress-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-sample.yml
+    with:
+      sample: geap-agent-gateway-ingress

@@ -47,3 +47,6 @@ terraform.tfvars
 .m2/
 # Build artifacts
 **/build/
+
+# Local execution plans
+PLAN.md

@@ -19,6 +19,10 @@ includes:
     taskfile: samples/geap-agent-secured/Taskfile.yml
     dir: samples/geap-agent-secured
     optional: true
+  ingress:
+    taskfile: samples/geap-agent-gateway-ingress/Taskfile.yml
+    dir: samples/geap-agent-gateway-ingress
+    optional: true
 
 tasks:
   default:
@@ -99,7 +103,10 @@ tasks:
       - task: base:test
       - task: simple:test
       - task: secured:test
+      - task: ingress:test
 
+  # geap-agent-gateway-ingress is left out: with geap-agent-secured, it would need 3 Agent Gateways in the region
+  # (RegionalAgentGateways quota: 2). Apply it on its own with `task ingress:apply`.
   apply-all:
     desc: "WARNING: provisions billable resources - base first, then the agents"
     cmds:
@@ -111,6 +118,7 @@ tasks:
     desc: "WARNING: deletes all sample resources - agents first, base last"
     prompt: This destroys every sample. Continue?
     cmds:
+      - task: ingress:destroy
       - task: secured:destroy
       - task: simple:destroy
       - task: base:destroy
