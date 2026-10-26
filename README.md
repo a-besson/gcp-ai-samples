@@ -24,6 +24,7 @@ task --list
 | `base` | Shared foundations: single KMS key, Belgium VPC, logging | [samples/base](samples/base/README.md) |
 | `geap-agent-simple` | ADK agent on Agent Runtime answering a question through an LLM | [samples/geap-agent-simple](samples/geap-agent-simple/README.md) |
 | `geap-agent-secured` | Same agent built on the Cloud Foundation Fabric modules (`geap-agent-gateway`, `geap-agent-runtime`, ...); one secured sample per project and region (gateway quota) | [samples/geap-agent-secured](samples/geap-agent-secured/README.md) |
+| `geap-agent-gateway-ingress` | ADK agent answering with Claude Haiku 5.5 (EU inference; temporary Gemini fallback while Claude has no quota) behind a `CLIENT_TO_AGENT` Agent Gateway where Model Armor blocks prompt injections; e2e suite proving the block happens at the gateway; not deployable next to `geap-agent-secured` (gateway quota) | [samples/geap-agent-gateway-ingress](samples/geap-agent-gateway-ingress/README.md) |
 
 ## 🧰 Task Commands
 
@@ -40,7 +41,7 @@ task --list
 ## 🔒 Security & sovereignty
 
 - Regional resources only in `europe-west1`; one CMEK key shared by all samples.
-- Model inference on regional endpoints of EU member-state regions only (`model_location`, `europe-west3` by default: `gemini-3.5-flash` is not served in `europe-west1`).
+- Model inference in the EU only (`model_location`): use multi-region `eu`.
 - Agent Identity (no service-account keys), least-privilege IAM bound to the agent principal.
 - Private networking: no public IP, no NAT, Private Google Access.
 - CI without cloud credentials: `build-<sample>` (lint, syntax check, offline tests), `check-quality` (pre-commit) and `check-cyber` (KICS, Trivy); `plan`/`apply` stay local; GitHub Actions pinned by SHA.
@@ -54,7 +55,8 @@ task --list
 ├── samples/
 │   ├── base/
 │   ├── geap-agent-simple/
-│   └── geap-agent-secured/   # same agent on Cloud Foundation Fabric modules
+│   ├── geap-agent-secured/   # same agent on Cloud Foundation Fabric modules
+│   └── geap-agent-gateway-ingress/   # Claude agent behind a Model Armor ingress gateway
 ├── Taskfile.yml
 └── .pre-commit-config.yaml
 ```

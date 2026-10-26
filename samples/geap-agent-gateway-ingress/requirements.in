@@ -1,0 +1,5 @@
+# Runtime dependencies shipped with the agent (compiled into app/requirements.txt).
+google-adk==2.10.0
+google-cloud-aiplatform[adk,agent_engines]==2.3.0
+# Claude on Vertex AI (google.adk.models.anthropic_llm.Claude); last 1.x release: 2.x postdates google-adk 2.10
+anthropic[vertex]==1.12.1
