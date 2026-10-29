@@ -1,5 +1,10 @@
 # Changelog
 
+## [2026-10-29] - Daily Log - geap agents: aiohttp and certifi CVE fixes
+
+- **geap-agent-simple, geap-agent-secured**: `app/requirements.txt` recompiled with `uv pip compile --upgrade-package` — `aiohttp` 3.14.3 → 3.14.5 (HIGH CVEs) and `certifi` 2026.7.22 → 2026.10.23 (GHSA-6q48-6c7w-9gw2, CRITICAL). Both packages are fixed together because Trivy fails until every flagged package is fixed, so the individual Dependabot PRs (#3, #4) could never turn green.
+- **geap-agent-simple**: `opentelemetry-api` stays at 1.42.1 — `google-adk==2.10.0` requires `<=1.42.1`, so the Dependabot bump to 1.45.1 (#2) is unresolvable until `google-adk` relaxes its bound.
+
 ## [2026-10-10] - Daily Log - geap-agent-secured-v2: client 404 traced to a zsh probe artifact, e2e 6/6
 
 - **ci**: fix the red workflows — Google provider pinned to `8.5.0` in the three samples (the floating `~> 8.5` resolved 8.6.0 on CI and made the generated `TFDOCS.md` drift, lock files being gitignored), offline Application Default Credentials fixture for the Python tests (`tests/conftest.py`), `actions: read` on the `check-cyber` jobs uploading SARIF (private repository), SARIF uploads made non-blocking (code scanning is not enabled on the repository; scans still gate the job)
